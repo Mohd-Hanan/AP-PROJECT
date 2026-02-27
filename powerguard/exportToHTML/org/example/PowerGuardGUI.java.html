@@ -1,0 +1,342 @@
+<html>
+<head>
+<title>PowerGuardGUI.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #2aacb8;}
+.s4 { color: #7a7e85;}
+.s5 { color: #6aab73;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+PowerGuardGUI.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">org</span><span class="s2">.</span><span class="s1">example</span><span class="s2">;</span>
+
+<span class="s0">import </span><span class="s1">com</span><span class="s2">.</span><span class="s1">formdev</span><span class="s2">.</span><span class="s1">flatlaf</span><span class="s2">.</span><span class="s1">FlatDarkLaf</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">javax</span><span class="s2">.</span><span class="s1">swing</span><span class="s2">.*;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">awt</span><span class="s2">.*;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">HashMap</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">Map</span><span class="s2">;</span>
+
+<span class="s0">import </span><span class="s1">org</span><span class="s2">.</span><span class="s1">jfree</span><span class="s2">.</span><span class="s1">chart</span><span class="s2">.</span><span class="s1">ChartFactory</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">org</span><span class="s2">.</span><span class="s1">jfree</span><span class="s2">.</span><span class="s1">chart</span><span class="s2">.</span><span class="s1">ChartPanel</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">org</span><span class="s2">.</span><span class="s1">jfree</span><span class="s2">.</span><span class="s1">chart</span><span class="s2">.</span><span class="s1">JFreeChart</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">org</span><span class="s2">.</span><span class="s1">jfree</span><span class="s2">.</span><span class="s1">data</span><span class="s2">.</span><span class="s1">category</span><span class="s2">.</span><span class="s1">DefaultCategoryDataset</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">org</span><span class="s2">.</span><span class="s1">jfree</span><span class="s2">.</span><span class="s1">chart</span><span class="s2">.</span><span class="s1">ChartUtils</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">io</span><span class="s2">.</span><span class="s1">File</span><span class="s2">;</span>
+
+<span class="s0">public class </span><span class="s1">PowerGuardGUI </span><span class="s0">extends </span><span class="s1">JFrame </span><span class="s2">{</span>
+    <span class="s0">private </span><span class="s1">LinearRegressionModel predictor</span><span class="s2">;</span>
+    <span class="s0">private final </span><span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt;&gt; </span><span class="s1">deviceLibrary </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+    <span class="s0">private final double </span><span class="s1">UNIT_RATE </span><span class="s2">= </span><span class="s3">8.0</span><span class="s2">; </span><span class="s4">// Your rate of 8.0 per unit</span>
+    <span class="s0">private </span><span class="s1">JTextField txtAppliance</span><span class="s2">, </span><span class="s1">txtRating</span><span class="s2">, </span><span class="s1">txtQuantity</span><span class="s2">, </span><span class="s1">txtHours</span><span class="s2">;</span>
+    <span class="s0">private </span><span class="s1">JLabel lblResult</span><span class="s2">;</span>
+    <span class="s0">private </span><span class="s1">ChartPanel chartPanel</span><span class="s2">; </span><span class="s4">// Fixed: Declared missing variable</span>
+    <span class="s0">private </span><span class="s1">DefaultCategoryDataset dataset</span><span class="s2">;</span>
+    <span class="s0">private </span><span class="s1">JTextField txtBudget</span><span class="s2">;</span>
+    <span class="s0">private </span><span class="s1">JPanel pnlStatus</span><span class="s2">;</span>
+
+
+    <span class="s0">public </span><span class="s1">PowerGuardGUI</span><span class="s2">(</span><span class="s1">LinearRegressionModel predictor</span><span class="s2">) {</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">predictor </span><span class="s2">= </span><span class="s1">predictor</span><span class="s2">;</span>
+        <span class="s4">// Apply modern look</span>
+        <span class="s0">try </span><span class="s2">{</span>
+            <span class="s1">UIManager</span><span class="s2">.</span><span class="s1">setLookAndFeel</span><span class="s2">(</span><span class="s0">new </span><span class="s1">FlatDarkLaf</span><span class="s2">());</span>
+        <span class="s2">} </span><span class="s0">catch </span><span class="s2">(</span><span class="s1">Exception e</span><span class="s2">) {</span>
+            <span class="s1">System</span><span class="s2">.</span><span class="s1">err</span><span class="s2">.</span><span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;Failed to initialize FlatLaf&quot;</span><span class="s2">);</span>
+        <span class="s2">}</span>
+        <span class="s4">// Inside the constructor</span>
+        <span class="s4">// Inside PowerGuardGUI constructor</span>
+<span class="s4">// KITCHEN &amp; FOOD</span>
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">samsung </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">samsung</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Smart Refrigerator&quot;</span><span class="s2">, </span><span class="s3">400</span><span class="s2">);</span>
+        <span class="s1">samsung</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Microwave Oven&quot;</span><span class="s2">, </span><span class="s3">1100</span><span class="s2">);</span>
+        <span class="s1">samsung</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Dishwasher&quot;</span><span class="s2">, </span><span class="s3">1200</span><span class="s2">);</span>
+
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">lg </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">lg</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;InstaView Fridge&quot;</span><span class="s2">, </span><span class="s3">350</span><span class="s2">);</span>
+        <span class="s1">lg</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Inverter AC (1.5 Ton)&quot;</span><span class="s2">, </span><span class="s3">1450</span><span class="s2">);</span>
+        <span class="s1">lg</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;OLED TV (65 inch)&quot;</span><span class="s2">, </span><span class="s3">150</span><span class="s2">);</span>
+
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">whirlpool </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">whirlpool</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Triple Door Fridge&quot;</span><span class="s2">, </span><span class="s3">300</span><span class="s2">);</span>
+        <span class="s1">whirlpool</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Front Load Washer&quot;</span><span class="s2">, </span><span class="s3">2100</span><span class="s2">);</span>
+        <span class="s1">whirlpool</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Air Purifier&quot;</span><span class="s2">, </span><span class="s3">50</span><span class="s2">);</span>
+
+<span class="s4">// HIGH POWER &amp; EV</span>
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">mobility </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">mobility</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Tesla Wall Connector&quot;</span><span class="s2">, </span><span class="s3">11500</span><span class="s2">);</span>
+        <span class="s1">mobility</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Ather 450X Charger&quot;</span><span class="s2">, </span><span class="s3">850</span><span class="s2">);</span>
+        <span class="s1">mobility</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Ola S1 Pro Charger&quot;</span><span class="s2">, </span><span class="s3">750</span><span class="s2">);</span>
+
+<span class="s4">// COMPUTING</span>
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">apple </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">apple</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;MacBook Pro (M3)&quot;</span><span class="s2">, </span><span class="s3">65</span><span class="s2">);</span>
+        <span class="s1">apple</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Studio Display&quot;</span><span class="s2">, </span><span class="s3">30</span><span class="s2">);</span>
+        <span class="s1">apple</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;iPad Pro Charger&quot;</span><span class="s2">, </span><span class="s3">20</span><span class="s2">);</span>
+
+<span class="s4">// Update your main deviceLibrary</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Samsung&quot;</span><span class="s2">, </span><span class="s1">samsung</span><span class="s2">);</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;LG&quot;</span><span class="s2">, </span><span class="s1">lg</span><span class="s2">);</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Whirlpool&quot;</span><span class="s2">, </span><span class="s1">whirlpool</span><span class="s2">);</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Mobility (EV)&quot;</span><span class="s2">, </span><span class="s1">mobility</span><span class="s2">);</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Apple (Computing)&quot;</span><span class="s2">, </span><span class="s1">apple</span><span class="s2">);</span>
+
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">samsungDevices </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">samsungDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Inverter AC (1.5 Ton)&quot;</span><span class="s2">, </span><span class="s3">1500</span><span class="s2">);</span>
+        <span class="s1">samsungDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Smart Fridge&quot;</span><span class="s2">, </span><span class="s3">300</span><span class="s2">);</span>
+
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">lgDevices </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">lgDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;OLED TV&quot;</span><span class="s2">, </span><span class="s3">150</span><span class="s2">);</span>
+        <span class="s1">lgDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Washing Machine&quot;</span><span class="s2">, </span><span class="s3">2000</span><span class="s2">);</span>
+        <span class="s0">this</span><span class="s2">.</span><span class="s1">predictor </span><span class="s2">= </span><span class="s0">new </span><span class="s1">LinearRegressionModel</span><span class="s2">();</span>
+        <span class="s0">try </span><span class="s2">{</span>
+            <span class="s0">this</span><span class="s2">.</span><span class="s1">predictor</span><span class="s2">.</span><span class="s1">trainModel</span><span class="s2">(</span><span class="s5">&quot;src/main/resources/data/household_power.arff&quot;</span><span class="s2">);</span>
+        <span class="s2">} </span><span class="s0">catch </span><span class="s2">(</span><span class="s1">Exception e</span><span class="s2">) {</span>
+            <span class="s1">System</span><span class="s2">.</span><span class="s1">err</span><span class="s2">.</span><span class="s1">println</span><span class="s2">(</span><span class="s5">&quot;Model training failed: &quot; </span><span class="s2">+ </span><span class="s1">e</span><span class="s2">.</span><span class="s1">getMessage</span><span class="s2">());</span>
+            <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;Critical Error: ML Dataset not found or corrupted.&quot;</span><span class="s2">);</span>
+        <span class="s2">}</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Samsung&quot;</span><span class="s2">, </span><span class="s1">samsungDevices</span><span class="s2">);</span>
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;LG&quot;</span><span class="s2">, </span><span class="s1">lgDevices</span><span class="s2">);</span>
+        <span class="s1">setTitle</span><span class="s2">(</span><span class="s5">&quot;PowerGuard Professional&quot;</span><span class="s2">);</span>
+        <span class="s4">// Inside the constructor</span>
+        <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">whirlpoolDevices </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HashMap</span><span class="s2">&lt;&gt;();</span>
+        <span class="s1">whirlpoolDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Top Load Washer&quot;</span><span class="s2">, </span><span class="s3">500</span><span class="s2">);</span>
+        <span class="s1">whirlpoolDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Side-by-Side Fridge&quot;</span><span class="s2">, </span><span class="s3">450</span><span class="s2">);</span>
+        <span class="s1">whirlpoolDevices</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Microwave Oven&quot;</span><span class="s2">, </span><span class="s3">1200</span><span class="s2">);</span>
+
+        <span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">put</span><span class="s2">(</span><span class="s5">&quot;Whirlpool&quot;</span><span class="s2">, </span><span class="s1">whirlpoolDevices</span><span class="s2">);</span>
+
+        <span class="s1">setSize</span><span class="s2">(</span><span class="s3">1000</span><span class="s2">, </span><span class="s3">700</span><span class="s2">);</span>
+        <span class="s1">setDefaultCloseOperation</span><span class="s2">(</span><span class="s1">EXIT_ON_CLOSE</span><span class="s2">);</span>
+        <span class="s1">setLayout</span><span class="s2">(</span><span class="s0">new </span><span class="s1">BorderLayout</span><span class="s2">(</span><span class="s3">10</span><span class="s2">, </span><span class="s3">10</span><span class="s2">));</span>
+
+        <span class="s4">// 1. Setup Input Card</span>
+        <span class="s1">txtAppliance </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">txtRating </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s5">&quot;1500&quot;</span><span class="s2">, </span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">txtQuantity </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s5">&quot;1&quot;</span><span class="s2">, </span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">txtHours </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s5">&quot;5.5&quot;</span><span class="s2">, </span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">lblResult </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Estimated Cost: ₹0.00&quot;</span><span class="s2">);</span>
+        <span class="s1">lblResult</span><span class="s2">.</span><span class="s1">setFont</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Font</span><span class="s2">(</span><span class="s5">&quot;SansSerif&quot;</span><span class="s2">, </span><span class="s1">Font</span><span class="s2">.</span><span class="s1">BOLD</span><span class="s2">, </span><span class="s3">16</span><span class="s2">));</span>
+
+        <span class="s4">// 2. Build the UI Sections</span>
+        <span class="s1">add</span><span class="s2">(</span><span class="s1">createSidebar</span><span class="s2">(), </span><span class="s1">BorderLayout</span><span class="s2">.</span><span class="s1">WEST</span><span class="s2">);</span>
+        <span class="s1">add</span><span class="s2">(</span><span class="s1">createMainDashboard</span><span class="s2">(), </span><span class="s1">BorderLayout</span><span class="s2">.</span><span class="s1">CENTER</span><span class="s2">);</span>
+        <span class="s1">add</span><span class="s2">(</span><span class="s1">createInputCard</span><span class="s2">(), </span><span class="s1">BorderLayout</span><span class="s2">.</span><span class="s1">EAST</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private </span><span class="s1">JPanel createSidebar</span><span class="s2">() {</span>
+        <span class="s4">// 1. Initialize the panel FIRST to avoid the NullPointerException</span>
+        <span class="s1">JPanel sidebar </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JPanel</span><span class="s2">();</span>
+
+        <span class="s4">// 2. Set the appearance and size</span>
+        <span class="s1">sidebar</span><span class="s2">.</span><span class="s1">setBackground</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Color</span><span class="s2">(</span><span class="s3">33</span><span class="s2">, </span><span class="s3">37</span><span class="s2">, </span><span class="s3">41</span><span class="s2">));</span>
+        <span class="s1">sidebar</span><span class="s2">.</span><span class="s1">setPreferredSize</span><span class="s2">(</span><span class="s0">new </span><span class="s1">Dimension</span><span class="s2">(</span><span class="s3">150</span><span class="s2">, </span><span class="s3">700</span><span class="s2">));</span>
+        <span class="s1">sidebar</span><span class="s2">.</span><span class="s1">setLayout</span><span class="s2">(</span><span class="s0">new </span><span class="s1">FlowLayout</span><span class="s2">(</span><span class="s1">FlowLayout</span><span class="s2">.</span><span class="s1">CENTER</span><span class="s2">, </span><span class="s3">10</span><span class="s2">, </span><span class="s3">20</span><span class="s2">));</span>
+
+        <span class="s4">// 3. Add Branding</span>
+        <span class="s1">JLabel lblLogo </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;POWERGUARD&quot;</span><span class="s2">);</span>
+        <span class="s1">lblLogo</span><span class="s2">.</span><span class="s1">setForeground</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">WHITE</span><span class="s2">);</span>
+        <span class="s1">sidebar</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">lblLogo</span><span class="s2">); </span><span class="s4">// Error happened here because sidebar was null</span>
+
+        <span class="s4">// 4. Add the Reset Button</span>
+        <span class="s1">JButton btnReset </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JButton</span><span class="s2">(</span><span class="s5">&quot;Reset Chart&quot;</span><span class="s2">);</span>
+        <span class="s1">btnReset</span><span class="s2">.</span><span class="s1">addActionListener</span><span class="s2">(</span><span class="s1">e -&gt; </span><span class="s2">{</span>
+            <span class="s1">dataset</span><span class="s2">.</span><span class="s1">clear</span><span class="s2">();</span>
+            <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;Chart history cleared.&quot;</span><span class="s2">);</span>
+        <span class="s2">});</span>
+        <span class="s1">sidebar</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">btnReset</span><span class="s2">);</span>
+
+        <span class="s4">// 5. Add the Export Button</span>
+        <span class="s1">JButton btnExport </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JButton</span><span class="s2">(</span><span class="s5">&quot;Export Chart&quot;</span><span class="s2">);</span>
+        <span class="s1">btnExport</span><span class="s2">.</span><span class="s1">addActionListener</span><span class="s2">(</span><span class="s1">e -&gt; saveChartImage</span><span class="s2">());</span>
+        <span class="s1">sidebar</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">btnExport</span><span class="s2">);</span>
+
+        <span class="s0">return </span><span class="s1">sidebar</span><span class="s2">;</span>
+    <span class="s2">}</span>
+    <span class="s0">private </span><span class="s1">JPanel createMainDashboard</span><span class="s2">() {</span>
+        <span class="s1">JPanel dashboard </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JPanel</span><span class="s2">(</span><span class="s0">new </span><span class="s1">BorderLayout</span><span class="s2">());</span>
+        <span class="s1">dashboard</span><span class="s2">.</span><span class="s1">setBorder</span><span class="s2">(</span><span class="s1">BorderFactory</span><span class="s2">.</span><span class="s1">createEmptyBorder</span><span class="s2">(</span><span class="s3">20</span><span class="s2">, </span><span class="s3">20</span><span class="s2">, </span><span class="s3">20</span><span class="s2">, </span><span class="s3">20</span><span class="s2">));</span>
+
+        <span class="s1">setupChart</span><span class="s2">(); </span><span class="s4">// Fixed: Method now defined</span>
+        <span class="s1">dashboard</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Usage Analytics&quot;</span><span class="s2">), </span><span class="s1">BorderLayout</span><span class="s2">.</span><span class="s1">NORTH</span><span class="s2">);</span>
+        <span class="s1">dashboard</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">chartPanel</span><span class="s2">, </span><span class="s1">BorderLayout</span><span class="s2">.</span><span class="s1">CENTER</span><span class="s2">);</span>
+
+        <span class="s0">return </span><span class="s1">dashboard</span><span class="s2">;</span>
+    <span class="s2">}</span>
+    <span class="s4">// Replace JTextFields with JComboBox</span>
+    <span class="s0">private </span><span class="s1">JComboBox</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">&gt; </span><span class="s1">comboCompany</span><span class="s2">;</span>
+    <span class="s0">private </span><span class="s1">JComboBox</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">&gt; </span><span class="s1">comboDevice</span><span class="s2">;</span>
+    <span class="s0">private </span><span class="s1">JLabel lblUnitCost</span><span class="s2">; </span><span class="s4">// To display price along with device</span>
+    <span class="s0">private </span><span class="s1">JComboBox</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">&gt; </span><span class="s1">comboCategory</span><span class="s2">;</span>
+
+    <span class="s0">private </span><span class="s1">JPanel createInputCard</span><span class="s2">() {</span>
+        <span class="s4">// 1. Initialize the JComboBoxes FIRST</span>
+        <span class="s4">// Get the keys from your deviceLibrary (Samsung, LG, etc.)</span>
+        
+        <span class="s1">String</span><span class="s2">[] </span><span class="s1">companies </span><span class="s2">= </span><span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">keySet</span><span class="s2">().</span><span class="s1">toArray</span><span class="s2">(</span><span class="s0">new </span><span class="s1">String</span><span class="s2">[</span><span class="s3">0</span><span class="s2">]);</span>
+        <span class="s1">comboCompany </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JComboBox</span><span class="s2">&lt;&gt;(</span><span class="s1">companies</span><span class="s2">);</span>
+        <span class="s1">comboDevice </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JComboBox</span><span class="s2">&lt;&gt;();</span>
+
+        <span class="s4">// 2. Initialize other UI components</span>
+        <span class="s1">txtQuantity </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s5">&quot;1&quot;</span><span class="s2">, </span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">txtHours </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s5">&quot;5.5&quot;</span><span class="s2">, </span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">txtBudget </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JTextField</span><span class="s2">(</span><span class="s5">&quot;500&quot;</span><span class="s2">, </span><span class="s3">15</span><span class="s2">);</span>
+        <span class="s1">lblResult </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Estimated Cost: ₹0.00&quot;</span><span class="s2">);</span>
+        <span class="s1">pnlStatus </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JPanel</span><span class="s2">();</span>
+        <span class="s1">pnlStatus</span><span class="s2">.</span><span class="s1">setBackground</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">GREEN</span><span class="s2">);</span>
+
+        <span class="s4">// 3. Setup the Panel Layout</span>
+        <span class="s1">JPanel card </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JPanel</span><span class="s2">(</span><span class="s0">new </span><span class="s1">GridLayout</span><span class="s2">(</span><span class="s3">16</span><span class="s2">, </span><span class="s3">1</span><span class="s2">, </span><span class="s3">5</span><span class="s2">, </span><span class="s3">5</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">setBorder</span><span class="s2">(</span><span class="s1">BorderFactory</span><span class="s2">.</span><span class="s1">createTitledBorder</span><span class="s2">(</span><span class="s5">&quot;Categorized Selection&quot;</span><span class="s2">));</span>
+
+        <span class="s4">// 4. Add components to the card</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Select Company:&quot;</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">comboCompany</span><span class="s2">);</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Select Device:&quot;</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">comboDevice</span><span class="s2">);</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Quantity:&quot;</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">txtQuantity</span><span class="s2">);</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Hours/Day:&quot;</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">txtHours</span><span class="s2">);</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Monthly Budget (₹):&quot;</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">txtBudget</span><span class="s2">);</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s0">new </span><span class="s1">JLabel</span><span class="s2">(</span><span class="s5">&quot;Budget Status:&quot;</span><span class="s2">));</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">pnlStatus</span><span class="s2">);</span>
+
+        <span class="s1">JButton btnPredict </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JButton</span><span class="s2">(</span><span class="s5">&quot;Predict Bill&quot;</span><span class="s2">);</span>
+        <span class="s1">btnPredict</span><span class="s2">.</span><span class="s1">addActionListener</span><span class="s2">(</span><span class="s1">e -&gt; calculate</span><span class="s2">());</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">btnPredict</span><span class="s2">);</span>
+        <span class="s1">card</span><span class="s2">.</span><span class="s1">add</span><span class="s2">(</span><span class="s1">lblResult</span><span class="s2">);</span>
+
+        <span class="s4">// 5. Setup Listeners</span>
+        <span class="s4">// Add the listener so comboDevice updates when comboCompany changes</span>
+        <span class="s1">comboCompany</span><span class="s2">.</span><span class="s1">addActionListener</span><span class="s2">(</span><span class="s1">e -&gt; updateDeviceList</span><span class="s2">());</span>
+
+        <span class="s4">// 6. NOW it is safe to call updateDeviceList because comboCompany is not null</span>
+        <span class="s1">updateDeviceList</span><span class="s2">();</span>
+
+        <span class="s0">return </span><span class="s1">card</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private void </span><span class="s1">setupChart</span><span class="s2">() { </span><span class="s4">// Fixed: Method now defined</span>
+        <span class="s1">dataset </span><span class="s2">= </span><span class="s0">new </span><span class="s1">DefaultCategoryDataset</span><span class="s2">();</span>
+        <span class="s1">JFreeChart chart </span><span class="s2">= </span><span class="s1">ChartFactory</span><span class="s2">.</span><span class="s1">createBarChart</span><span class="s2">(</span><span class="s5">&quot;Consumption Trend&quot;</span><span class="s2">, </span><span class="s5">&quot;Record&quot;</span><span class="s2">, </span><span class="s5">&quot;Cost (₹)&quot;</span><span class="s2">, </span><span class="s1">dataset</span><span class="s2">);</span>
+        <span class="s1">chartPanel </span><span class="s2">= </span><span class="s0">new </span><span class="s1">ChartPanel</span><span class="s2">(</span><span class="s1">chart</span><span class="s2">);</span>
+    <span class="s2">}</span>
+    <span class="s0">private void </span><span class="s1">updateDeviceList</span><span class="s2">() {</span>
+        <span class="s4">// 1. Clear the previous list to avoid mixing appliances</span>
+        <span class="s1">comboDevice</span><span class="s2">.</span><span class="s1">removeAllItems</span><span class="s2">();</span>
+
+        <span class="s4">// 2. Get current selection</span>
+        <span class="s1">String selectedCategory </span><span class="s2">= (</span><span class="s1">String</span><span class="s2">) </span><span class="s1">comboCompany</span><span class="s2">.</span><span class="s1">getSelectedItem</span><span class="s2">();</span>
+
+        <span class="s4">// 3. Safety Check: Only proceed if category exists in our library</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">selectedCategory </span><span class="s2">!= </span><span class="s0">null </span><span class="s2">&amp;&amp; </span><span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">containsKey</span><span class="s2">(</span><span class="s1">selectedCategory</span><span class="s2">)) {</span>
+            <span class="s1">Map</span><span class="s2">&lt;</span><span class="s1">String</span><span class="s2">, </span><span class="s1">Integer</span><span class="s2">&gt; </span><span class="s1">devices </span><span class="s2">= </span><span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">selectedCategory</span><span class="s2">);</span>
+
+            <span class="s4">// 4. Populate the dropdown with device names</span>
+            <span class="s0">for </span><span class="s2">(</span><span class="s1">String deviceName </span><span class="s2">: </span><span class="s1">devices</span><span class="s2">.</span><span class="s1">keySet</span><span class="s2">()) {</span>
+                <span class="s1">comboDevice</span><span class="s2">.</span><span class="s1">addItem</span><span class="s2">(</span><span class="s1">deviceName</span><span class="s2">);</span>
+            <span class="s2">}</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private void </span><span class="s1">updateUnitCost</span><span class="s2">() {</span>
+        <span class="s1">String category </span><span class="s2">= (</span><span class="s1">String</span><span class="s2">) </span><span class="s1">comboCategory</span><span class="s2">.</span><span class="s1">getSelectedItem</span><span class="s2">();</span>
+        <span class="s1">String device </span><span class="s2">= (</span><span class="s1">String</span><span class="s2">) </span><span class="s1">comboDevice</span><span class="s2">.</span><span class="s1">getSelectedItem</span><span class="s2">();</span>
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">device </span><span class="s2">!= </span><span class="s0">null </span><span class="s2">&amp;&amp; </span><span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">containsKey</span><span class="s2">(</span><span class="s1">category</span><span class="s2">)) {</span>
+            <span class="s0">int </span><span class="s1">watts </span><span class="s2">= </span><span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">category</span><span class="s2">).</span><span class="s1">get</span><span class="s2">(</span><span class="s1">device</span><span class="s2">);</span>
+            <span class="s4">// Standard energy formula: (Watts / 1000) * Rate per Unit</span>
+            <span class="s0">double </span><span class="s1">hourlyCost </span><span class="s2">= (</span><span class="s1">watts </span><span class="s2">/ </span><span class="s3">1000.0</span><span class="s2">) * </span><span class="s1">UNIT_RATE</span><span class="s2">;</span>
+            <span class="s1">lblUnitCost</span><span class="s2">.</span><span class="s1">setText</span><span class="s2">(</span><span class="s1">String</span><span class="s2">.</span><span class="s1">format</span><span class="s2">(</span><span class="s5">&quot;Device Rate: ₹%.2f / hr&quot;</span><span class="s2">, </span><span class="s1">hourlyCost</span><span class="s2">));</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+    <span class="s0">private void </span><span class="s1">calculate</span><span class="s2">() {</span>
+        <span class="s0">try </span><span class="s2">{</span>
+            <span class="s4">// 1. Get selections from your new JComboBoxes</span>
+            <span class="s1">String category </span><span class="s2">= (</span><span class="s1">String</span><span class="s2">) </span><span class="s1">comboCompany</span><span class="s2">.</span><span class="s1">getSelectedItem</span><span class="s2">(); </span><span class="s4">// Your category/company dropdown</span>
+            <span class="s1">String device </span><span class="s2">= (</span><span class="s1">String</span><span class="s2">) </span><span class="s1">comboDevice</span><span class="s2">.</span><span class="s1">getSelectedItem</span><span class="s2">();</span>
+
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">device </span><span class="s2">== </span><span class="s0">null </span><span class="s2">|| </span><span class="s1">category </span><span class="s2">== </span><span class="s0">null</span><span class="s2">) {</span>
+                <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;Please select both a category and a device.&quot;</span><span class="s2">);</span>
+                <span class="s0">return</span><span class="s2">;</span>
+            <span class="s2">}</span>
+
+            <span class="s4">// 2. Retrieve fixed wattage from your deviceLibrary</span>
+            <span class="s0">int </span><span class="s1">rating </span><span class="s2">= </span><span class="s1">deviceLibrary</span><span class="s2">.</span><span class="s1">get</span><span class="s2">(</span><span class="s1">category</span><span class="s2">).</span><span class="s1">get</span><span class="s2">(</span><span class="s1">device</span><span class="s2">);</span>
+
+            <span class="s4">// 3. Parse user inputs for quantity, hours, and budget</span>
+            <span class="s0">int </span><span class="s1">quantity </span><span class="s2">= </span><span class="s1">Integer</span><span class="s2">.</span><span class="s1">parseInt</span><span class="s2">(</span><span class="s1">txtQuantity</span><span class="s2">.</span><span class="s1">getText</span><span class="s2">());</span>
+            <span class="s0">double </span><span class="s1">hours </span><span class="s2">= </span><span class="s1">Double</span><span class="s2">.</span><span class="s1">parseDouble</span><span class="s2">(</span><span class="s1">txtHours</span><span class="s2">.</span><span class="s1">getText</span><span class="s2">());</span>
+            <span class="s0">double </span><span class="s1">budgetLimit </span><span class="s2">= </span><span class="s1">Double</span><span class="s2">.</span><span class="s1">parseDouble</span><span class="s2">(</span><span class="s1">txtBudget</span><span class="s2">.</span><span class="s1">getText</span><span class="s2">());</span>
+
+            <span class="s4">// 4. Calculate raw energy units (kWh)</span>
+            <span class="s1">UsageDetails usage </span><span class="s2">= </span><span class="s0">new </span><span class="s1">UsageDetails</span><span class="s2">(</span><span class="s1">quantity</span><span class="s2">, (</span><span class="s0">int</span><span class="s2">)</span><span class="s1">hours</span><span class="s2">, </span><span class="s3">0</span><span class="s2">);</span>
+            <span class="s0">double </span><span class="s1">rawKWh </span><span class="s2">= </span><span class="s1">usage</span><span class="s2">.</span><span class="s1">calculateConsumption</span><span class="s2">(</span><span class="s1">rating</span><span class="s2">);</span>
+
+            <span class="s4">// 5. ML Prediction using the simplified model (Emergency Fix applied)</span>
+            <span class="s4">// The predictor now expects only numeric power features</span>
+            <span class="s0">double </span><span class="s1">predictedUnits </span><span class="s2">= </span><span class="s1">predictor</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">rawKWh</span><span class="s2">);</span>
+
+            <span class="s4">// 6. Convert predicted units to Rupees using your UNIT_RATE (8.0)</span>
+            <span class="s0">double </span><span class="s1">cost </span><span class="s2">= </span><span class="s1">predictedUnits </span><span class="s2">* </span><span class="s1">UNIT_RATE</span><span class="s2">;</span>
+
+            <span class="s4">// 7. Update UI Results</span>
+            <span class="s1">lblResult</span><span class="s2">.</span><span class="s1">setText</span><span class="s2">(</span><span class="s1">String</span><span class="s2">.</span><span class="s1">format</span><span class="s2">(</span><span class="s5">&quot;ML Predicted Cost: ₹%.2f&quot;</span><span class="s2">, </span><span class="s1">cost</span><span class="s2">));</span>
+
+            <span class="s4">// 8. Budget Indicator Logic</span>
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">cost </span><span class="s2">&gt; </span><span class="s1">budgetLimit</span><span class="s2">) {</span>
+                <span class="s1">pnlStatus</span><span class="s2">.</span><span class="s1">setBackground</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">RED</span><span class="s2">); </span><span class="s4">// Over Budget</span>
+            <span class="s2">} </span><span class="s0">else </span><span class="s2">{</span>
+                <span class="s1">pnlStatus</span><span class="s2">.</span><span class="s1">setBackground</span><span class="s2">(</span><span class="s1">Color</span><span class="s2">.</span><span class="s1">GREEN</span><span class="s2">); </span><span class="s4">// Safe</span>
+            <span class="s2">}</span>
+
+            <span class="s4">// 9. Update the Analytics Chart</span>
+            <span class="s1">dataset</span><span class="s2">.</span><span class="s1">addValue</span><span class="s2">(</span><span class="s1">cost</span><span class="s2">, </span><span class="s5">&quot;Cost&quot;</span><span class="s2">, </span><span class="s5">&quot;Entry &quot; </span><span class="s2">+ (</span><span class="s1">dataset</span><span class="s2">.</span><span class="s1">getColumnCount</span><span class="s2">() + </span><span class="s3">1</span><span class="s2">));</span>
+
+            <span class="s4">// 10. Persist the record to history.csv</span>
+            <span class="s0">new </span><span class="s1">DataHandler</span><span class="s2">().</span><span class="s1">saveRecord</span><span class="s2">(</span><span class="s1">device</span><span class="s2">, </span><span class="s1">cost</span><span class="s2">);</span>
+
+        <span class="s2">} </span><span class="s0">catch </span><span class="s2">(</span><span class="s1">NumberFormatException e</span><span class="s2">) {</span>
+            <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;Please enter valid numbers for Quantity, Hours, and Budget.&quot;</span><span class="s2">);</span>
+        <span class="s2">} </span><span class="s0">catch </span><span class="s2">(</span><span class="s1">Exception e</span><span class="s2">) {</span>
+            <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;ML Prediction Error: &quot; </span><span class="s2">+ </span><span class="s1">e</span><span class="s2">.</span><span class="s1">getMessage</span><span class="s2">());</span>
+            <span class="s1">e</span><span class="s2">.</span><span class="s1">printStackTrace</span><span class="s2">();</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+    <span class="s0">private void </span><span class="s1">saveChartImage</span><span class="s2">() {</span>
+        <span class="s0">try </span><span class="s2">{</span>
+            <span class="s4">// 1. Create a file chooser to let the user pick where to save</span>
+            <span class="s1">JFileChooser fileChooser </span><span class="s2">= </span><span class="s0">new </span><span class="s1">JFileChooser</span><span class="s2">();</span>
+            <span class="s1">fileChooser</span><span class="s2">.</span><span class="s1">setDialogTitle</span><span class="s2">(</span><span class="s5">&quot;Save Chart as Image&quot;</span><span class="s2">);</span>
+
+            <span class="s0">int </span><span class="s1">userSelection </span><span class="s2">= </span><span class="s1">fileChooser</span><span class="s2">.</span><span class="s1">showSaveDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">);</span>
+
+            <span class="s0">if </span><span class="s2">(</span><span class="s1">userSelection </span><span class="s2">== </span><span class="s1">JFileChooser</span><span class="s2">.</span><span class="s1">APPROVE_OPTION</span><span class="s2">) {</span>
+                <span class="s1">File fileToSave </span><span class="s2">= </span><span class="s1">fileChooser</span><span class="s2">.</span><span class="s1">getSelectedFile</span><span class="s2">();</span>
+                <span class="s4">// Ensure the file has a .png extension</span>
+                <span class="s1">String filePath </span><span class="s2">= </span><span class="s1">fileToSave</span><span class="s2">.</span><span class="s1">getAbsolutePath</span><span class="s2">();</span>
+                <span class="s0">if </span><span class="s2">(!</span><span class="s1">filePath</span><span class="s2">.</span><span class="s1">toLowerCase</span><span class="s2">().</span><span class="s1">endsWith</span><span class="s2">(</span><span class="s5">&quot;.png&quot;</span><span class="s2">)) {</span>
+                    <span class="s1">fileToSave </span><span class="s2">= </span><span class="s0">new </span><span class="s1">File</span><span class="s2">(</span><span class="s1">filePath </span><span class="s2">+ </span><span class="s5">&quot;.png&quot;</span><span class="s2">);</span>
+                <span class="s2">}</span>
+
+                <span class="s4">// 2. Export the JFreeChart from your chartPanel</span>
+                <span class="s1">ChartUtils</span><span class="s2">.</span><span class="s1">saveChartAsPNG</span><span class="s2">(</span><span class="s1">fileToSave</span><span class="s2">, </span><span class="s1">chartPanel</span><span class="s2">.</span><span class="s1">getChart</span><span class="s2">(), </span><span class="s3">800</span><span class="s2">, </span><span class="s3">600</span><span class="s2">);</span>
+
+                <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;Chart saved successfully to: &quot; </span><span class="s2">+ </span><span class="s1">fileToSave</span><span class="s2">.</span><span class="s1">getName</span><span class="s2">());</span>
+            <span class="s2">}</span>
+        <span class="s2">} </span><span class="s0">catch </span><span class="s2">(</span><span class="s1">Exception e</span><span class="s2">) {</span>
+            <span class="s1">JOptionPane</span><span class="s2">.</span><span class="s1">showMessageDialog</span><span class="s2">(</span><span class="s0">this</span><span class="s2">, </span><span class="s5">&quot;Error saving chart: &quot; </span><span class="s2">+ </span><span class="s1">e</span><span class="s2">.</span><span class="s1">getMessage</span><span class="s2">());</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+<span class="s2">}</span></pre>
+</body>
+</html>
