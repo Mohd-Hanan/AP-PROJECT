@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="PowerGuard" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="org.example.Main" />
+    <module name="powerguard" />
+    <option name="VM_PARAMETERS" value="-Xmx4g" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
