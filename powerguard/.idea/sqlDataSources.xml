@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DdlMappings">
+    <mapping uuid="e2507cac-8b51-42ee-868a-f431f6d0736f" name="household_power_consumption.txt Mapping">
+      <data-sources db="cb5a6733-4911-4569-b9f0-4f90f5e8aada" />
+    </mapping>
+  </component>
+</project>
