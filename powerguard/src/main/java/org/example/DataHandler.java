@@ -9,6 +9,7 @@ import weka.core.converters.ArffSaver;
 import weka.core.converters.CSVLoader;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Normalize;
+import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.attribute.ReplaceMissingValues;
 
 public class DataHandler {
@@ -32,6 +33,12 @@ public class DataHandler {
 
     public static void convertCSVtoARFF(String sourcePath, String destPath) throws Exception {
         Instances processed = preprocessMergedCSV(sourcePath, 10000, 42);
+        saveInstancesAsARFF(processed, destPath);
+    }
+
+    public static void saveInstancesAsARFF(Instances data, String destPath) throws Exception {
+        ArffSaver saver = new ArffSaver();
+        saver.setInstances(data);
 
         ArffSaver saver = new ArffSaver();
         saver.setInstances(processed);
