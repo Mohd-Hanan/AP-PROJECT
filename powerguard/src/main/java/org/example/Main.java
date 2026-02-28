@@ -2,31 +2,43 @@ package org.example;
 
 import javax.swing.*;
 import java.io.File;
+import weka.core.Instances;
 
 public class Main {
     public static void main(String[] args) {
-        String arffPath = "src/main/resources/data/household_power.arff";
+        String arffPath = "src/main/resources/data/final_electricity_dataset.arff";
         String modelPath = "src/main/resources/data/power_model.model";
-        String rawTxt = "src/main/resources/data/household_power_consumption.txt";
+        String mergedCsvPath = "src/main/resources/data/final electricity dataset.csv";
 
         LinearRegressionModel predictor = new LinearRegressionModel();
 
         try {
             File modelFile = new File(modelPath);
+            File sourceFile = new File(mergedCsvPath);
 
-            if (!modelFile.exists()) {
-                System.out.println("First-time setup: Converting data...");
-                // This is where you use the method IntelliJ says has "no usage"
-                DataHandler.convertCSVtoARFF(rawTxt, arffPath);
+            if (!sourceFile.exists()) {
+                throw new IllegalStateException("Merged dataset not found at: " + mergedCsvPath);
+            }
 
-                System.out.println("Training model... Please wait.");
-                predictor.trainModel(arffPath);
-                predictor.saveModel(modelPath); // Save it so we never do this again
+            boolean retrainNeeded = !modelFile.exists() || sourceFile.lastModified() > modelFile.lastModified();
 
-                JOptionPane.showMessageDialog(null, "Setup Complete!");
+            if (retrainNeeded) {
+                System.out.println("Step 1/3 - Data preprocessing...");
+                Instances processedData = DataHandler.preprocessMergedCSV(mergedCsvPath, 10000, 42);
+
+                System.out.println("Step 2/3 - Data training...");
+                LinearRegressionModel.ModelEvaluationResult evaluation = predictor.trainAndTestModel(processedData, 0.2, 42);
+
+                System.out.println("Step 3/3 - Data testing...");
+                System.out.println(evaluation);
+
+                DataHandler.convertCSVtoARFF(mergedCsvPath, arffPath);
+                predictor.saveModel(modelPath);
+
+                JOptionPane.showMessageDialog(null, "Preprocessing, training, and testing complete.\n" + evaluation);
             } else {
                 System.out.println("Loading pre-trained model...");
-                predictor.loadModel(modelPath); // Instant loading
+                predictor.loadModel(modelPath);
             }
 
             SwingUtilities.invokeLater(() -> new PowerGuardGUI(predictor).setVisible(true));
