@@ -7,7 +7,7 @@ import java.util.Random;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
-import weka.classifiers.functions.AdditiveRegression;
+import weka.classifiers.meta.AdditiveRegression;
 import weka.classifiers.functions.LinearRegression;
 import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.trees.REPTree;
@@ -161,7 +161,7 @@ public class LinearRegressionModel {
 
             System.out.println(result);
 
-            if (bestResult == null || result.r2 > bestResult.r2) {
+            if (bestResult == null || result.rmse < bestResult.rmse) {
                 bestResult = result;
                 bestModel = candidate;
             }
@@ -195,7 +195,12 @@ public class LinearRegressionModel {
 
         return model.classifyInstance(instance);
     }
-
+    /* =======================
+       Backward Compatibility Wrapper
+    ======================= */
+    public void trainModel(String datasetPath) throws Exception {
+        trainAndSelectBestModel(datasetPath, 0.2, 42);
+    }
     /* =======================
        Save / Load
     ======================== */
