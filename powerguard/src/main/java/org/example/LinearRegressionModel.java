@@ -10,6 +10,14 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 import weka.core.converters.ConverterUtils.DataSource;
+import weka.classifiers.functions.LinearRegression;
+import weka.core.Instances;
+import weka.core.Instance;
+import weka.core.DenseInstance;
+import weka.core.Attribute;
+import weka.core.converters.ConverterUtils.DataSource;
+import weka.core.SerializationHelper;
+import java.util.ArrayList;
 
 public class LinearRegressionModel {
     private LinearRegression model;
@@ -42,6 +50,12 @@ public class LinearRegressionModel {
         if (this.datasetHeader != null) {
             return;
         }
+    /**
+     * Initializes the dataset structure to prevent NullPointerExceptions.
+     * This method MUST be called in the GUI constructor.
+     */
+    public void initializeHeader() {
+        if (this.datasetHeader != null) return;
 
         ArrayList<Attribute> attributes = new ArrayList<>();
         attributes.add(new Attribute("fan"));
@@ -129,11 +143,27 @@ public class LinearRegressionModel {
             throw new IllegalStateException("Dataset header not initialized. Train or load model with header first.");
         }
 
+        // Capture the header from the actual training data
+        this.datasetHeader = new Instances(data, 0);
+        model = new LinearRegression();
+
+        System.out.println("Training model on UCI power data...");
+        model.buildClassifier(data);
+        this.trainStatus = true;
+    }
+
+    public double predict(double rawKWh) throws Exception {
+        if (!trainStatus && datasetHeader == null) {
+            throw new IllegalStateException("Model not initialized. Call initializeHeader() or trainModel().");
+        }
+
+        // Create a single-instance container for the prediction
         double[] features = new double[datasetHeader.numAttributes()];
         features[0] = rawKWh;
 
         Instance instance = new DenseInstance(1.0, features);
         instance.setDataset(datasetHeader);
+        instance.setDataset(datasetHeader); // Uses the initialized header
 
         return model.classifyInstance(instance);
     }
@@ -160,5 +190,13 @@ public class LinearRegressionModel {
         if (this.datasetHeader == null) {
             initializeHeader();
         }
+        SerializationHelper.write(path, model);
+    }
+
+    public void loadModel(String path) throws Exception {
+        this.model = (LinearRegression) SerializationHelper.read(path);
+        this.trainStatus = true;
+        // Ensure header is still valid after loading a saved model
+        if(this.datasetHeader == null) initializeHeader();
     }
 }
