@@ -1,5 +1,15 @@
 package org.example;
 
+import java.util.ArrayList;
+import java.util.Random;
+import weka.classifiers.Evaluation;
+import weka.classifiers.functions.LinearRegression;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.SerializationHelper;
+import weka.core.converters.ConverterUtils.DataSource;
 import weka.classifiers.functions.LinearRegression;
 import weka.core.Instances;
 import weka.core.Instance;
@@ -14,6 +24,32 @@ public class LinearRegressionModel {
     private Instances datasetHeader;
     private boolean trainStatus = false;
 
+    public static class ModelEvaluationResult {
+        public final double mae;
+        public final double rmse;
+        public final double r2;
+        public final int trainRows;
+        public final int testRows;
+
+        public ModelEvaluationResult(double mae, double rmse, double r2, int trainRows, int testRows) {
+            this.mae = mae;
+            this.rmse = rmse;
+            this.r2 = r2;
+            this.trainRows = trainRows;
+            this.testRows = testRows;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Testing complete -> Train: %d, Test: %d, MAE: %.5f, RMSE: %.5f, R²: %.5f",
+                    trainRows, testRows, mae, rmse, r2);
+        }
+    }
+
+    public void initializeHeader() {
+        if (this.datasetHeader != null) {
+            return;
+        }
     /**
      * Initializes the dataset structure to prevent NullPointerExceptions.
      * This method MUST be called in the GUI constructor.
@@ -58,6 +94,55 @@ public class LinearRegressionModel {
             data.setClassIndex(data.numAttributes() - 1);
         }
 
+        model = new LinearRegression();
+        model.buildClassifier(data);
+
+        this.datasetHeader = new Instances(data, 0);
+        this.trainStatus = true;
+
+        System.out.println("Training complete on merged electricity dataset. Rows: " + data.numInstances());
+    }
+
+    public ModelEvaluationResult trainAndTestModel(Instances dataset, double testRatio, long seed) throws Exception {
+        if (dataset.classIndex() == -1) {
+            dataset.setClassIndex(dataset.numAttributes() - 1);
+        }
+
+        Instances shuffled = new Instances(dataset);
+        shuffled.randomize(new Random(seed));
+
+        int testSize = Math.max(1, (int) Math.round(shuffled.numInstances() * testRatio));
+        int trainSize = Math.max(1, shuffled.numInstances() - testSize);
+
+        Instances trainData = new Instances(shuffled, 0, trainSize);
+        Instances testData = new Instances(shuffled, trainSize, shuffled.numInstances() - trainSize);
+
+        model = new LinearRegression();
+        model.buildClassifier(trainData);
+
+        Evaluation evaluation = new Evaluation(trainData);
+        evaluation.evaluateModel(model, testData);
+
+        this.datasetHeader = new Instances(trainData, 0);
+        this.trainStatus = true;
+
+        return new ModelEvaluationResult(
+                evaluation.meanAbsoluteError(),
+                evaluation.rootMeanSquaredError(),
+                evaluation.correlationCoefficient(),
+                trainData.numInstances(),
+                testData.numInstances()
+        );
+    }
+
+    public double predict(double rawKWh) throws Exception {
+        if (!trainStatus || model == null) {
+            throw new IllegalStateException("Model not initialized. Train or load model first.");
+        }
+        if (datasetHeader == null) {
+            throw new IllegalStateException("Dataset header not initialized. Train or load model with header first.");
+        }
+
         // Capture the header from the actual training data
         this.datasetHeader = new Instances(data, 0);
         model = new LinearRegression();
@@ -77,12 +162,34 @@ public class LinearRegressionModel {
         features[0] = rawKWh;
 
         Instance instance = new DenseInstance(1.0, features);
+        instance.setDataset(datasetHeader);
         instance.setDataset(datasetHeader); // Uses the initialized header
 
         return model.classifyInstance(instance);
     }
 
     public void saveModel(String path) throws Exception {
+        Object[] payload = new Object[]{model, datasetHeader};
+        SerializationHelper.write(path, payload);
+    }
+
+    public void loadModel(String path) throws Exception {
+        Object saved = SerializationHelper.read(path);
+
+        if (saved instanceof Object[]) {
+            Object[] payload = (Object[]) saved;
+            this.model = (LinearRegression) payload[0];
+            if (payload.length > 1 && payload[1] instanceof Instances) {
+                this.datasetHeader = (Instances) payload[1];
+            }
+        } else {
+            this.model = (LinearRegression) saved;
+        }
+
+        this.trainStatus = true;
+        if (this.datasetHeader == null) {
+            initializeHeader();
+        }
         SerializationHelper.write(path, model);
     }
 

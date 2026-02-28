@@ -2,6 +2,15 @@ package org.example;
 
 import javax.swing.*;
 import java.io.File;
+import weka.core.Instances;
+
+public class Main {
+    public static void main(String[] args) {
+        String arffPath = "src/main/resources/data/final_electricity_dataset.arff";
+package org.example;
+
+import javax.swing.*;
+import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
@@ -22,6 +31,19 @@ public class Main {
             boolean retrainNeeded = !modelFile.exists() || sourceFile.lastModified() > modelFile.lastModified();
 
             if (retrainNeeded) {
+                System.out.println("Step 1/3 - Data preprocessing...");
+                Instances processedData = DataHandler.preprocessMergedCSV(mergedCsvPath, 10000, 42);
+
+                System.out.println("Step 2/3 - Data training...");
+                LinearRegressionModel.ModelEvaluationResult evaluation = predictor.trainAndTestModel(processedData, 0.2, 42);
+
+                System.out.println("Step 3/3 - Data testing...");
+                System.out.println(evaluation);
+
+                DataHandler.convertCSVtoARFF(mergedCsvPath, arffPath);
+                predictor.saveModel(modelPath);
+
+                JOptionPane.showMessageDialog(null, "Preprocessing, training, and testing complete.\n" + evaluation);
                 System.out.println("Preparing merged dataset for training...");
                 DataHandler.convertCSVtoARFF(mergedCsvPath, arffPath);
 
@@ -34,6 +56,13 @@ public class Main {
                 System.out.println("Loading pre-trained model...");
                 predictor.loadModel(modelPath);
             }
+
+            SwingUtilities.invokeLater(() -> new PowerGuardGUI(predictor).setVisible(true));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
             SwingUtilities.invokeLater(() -> new PowerGuardGUI(predictor).setVisible(true));
 
