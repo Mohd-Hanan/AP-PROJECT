@@ -19,17 +19,32 @@ public class LinearRegressionModel {
      * This method MUST be called in the GUI constructor.
      */
     public void initializeHeader() {
-        ArrayList<Attribute> attributes = new ArrayList<>();
+        if (this.datasetHeader != null) return;
 
-        // The UCI dataset model expects 7 attributes after your training cleaning
-        // We add dummy attributes to match the 'Dest' (7) required by the model
-        attributes.add(new Attribute("Global_active_power")); // This is your rawKWh
-        attributes.add(new Attribute("Global_reactive_power"));
-        attributes.add(new Attribute("Voltage"));
-        attributes.add(new Attribute("Global_intensity"));
-        attributes.add(new Attribute("Sub_metering_1"));
-        attributes.add(new Attribute("Sub_metering_2"));
-        attributes.add(new Attribute("target_cost")); // The class index (7th attribute)
+        ArrayList<Attribute> attributes = new ArrayList<>();
+        attributes.add(new Attribute("fan"));
+        attributes.add(new Attribute("refrigerator"));
+        attributes.add(new Attribute("airconditioner"));
+        attributes.add(new Attribute("television"));
+        attributes.add(new Attribute("monitor"));
+        attributes.add(new Attribute("monthlyhours"));
+        attributes.add(new Attribute("tariffrate"));
+        attributes.add(new Attribute("forecastwindproduction"));
+        attributes.add(new Attribute("systemloadea"));
+        attributes.add(new Attribute("smpea"));
+        attributes.add(new Attribute("co2intensity"));
+        attributes.add(new Attribute("actualwindproduction"));
+        attributes.add(new Attribute("num_rooms"));
+        attributes.add(new Attribute("num_people"));
+        attributes.add(new Attribute("housearea"));
+        attributes.add(new Attribute("is_ac"));
+        attributes.add(new Attribute("is_tv"));
+        attributes.add(new Attribute("is_flat"));
+        attributes.add(new Attribute("ave_monthly_income"));
+        attributes.add(new Attribute("num_children"));
+        attributes.add(new Attribute("is_urban"));
+        attributes.add(new Attribute("electricitybill"));
+        attributes.add(new Attribute("units"));
 
         this.datasetHeader = new Instances("PowerPredictionStructure", attributes, 0);
         this.datasetHeader.setClassIndex(this.datasetHeader.numAttributes() - 1);
@@ -38,10 +53,6 @@ public class LinearRegressionModel {
     public void trainModel(String datasetPath) throws Exception {
         DataSource source = new DataSource(datasetPath);
         Instances data = source.getDataSet();
-
-        // Data cleaning: Remove Date and Time to focus on power usage
-        data.deleteAttributeAt(0); // Removes Date
-        data.deleteAttributeAt(0); // Removes Time
 
         if (data.classIndex() == -1) {
             data.setClassIndex(data.numAttributes() - 1);

@@ -29,7 +29,7 @@ public class DataHandler {
         System.out.println("Reading large dataset: " + sourcePath);
         CSVLoader loader = new CSVLoader();
         loader.setSource(new File(sourcePath));
-        loader.setFieldSeparator(";");
+        loader.setFieldSeparator(",");
         loader.setMissingValue("?");
 
         // This triggers the actual reading of the file
