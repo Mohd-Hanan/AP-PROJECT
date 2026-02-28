@@ -9,27 +9,27 @@ public class Main {
 
         String arffPath = "src/main/resources/data/final_electricity_dataset.arff";
         String modelPath = "src/main/resources/data/power_model.model";
-        String mergedCsvPath = "src/main/resources/data/final electricity dataset.csv";
+        String csvPath = "src/main/resources/data/final electricity dataset.csv";
 
         LinearRegressionModel predictor = new LinearRegressionModel();
 
         try {
 
             File modelFile = new File(modelPath);
-            File sourceFile = new File(mergedCsvPath);
+            File sourceFile = new File(csvPath);
 
             if (!sourceFile.exists()) {
-                throw new IllegalStateException("Dataset not found at: " + mergedCsvPath);
+                throw new IllegalStateException("Dataset not found at: " + csvPath);
             }
 
             boolean retrainNeeded =
                     !modelFile.exists() ||
-                    sourceFile.lastModified() > modelFile.lastModified();
+                            sourceFile.lastModified() > modelFile.lastModified();
 
             if (retrainNeeded) {
 
                 System.out.println("Step 1/3 - Preprocessing CSV...");
-                DataHandler.convertCSVtoARFF(mergedCsvPath, arffPath);
+                DataHandler.convertCSVtoARFF(csvPath, arffPath);
 
                 System.out.println("Step 2/3 - Benchmarking models...");
                 LinearRegressionModel.ModelEvaluationResult bestResult =
@@ -38,22 +38,19 @@ public class Main {
                 System.out.println("Step 3/3 - Saving best model...");
                 predictor.saveModel(modelPath);
 
+                System.out.println("======================================");
                 System.out.println("Best Model Selected: " + bestResult.modelName);
                 System.out.println(bestResult);
-
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Training Complete!\n\nBest Model: "
-                                + bestResult.modelName
-                                + "\n"
-                                + bestResult
-                );
+                System.out.println("======================================");
 
             } else {
+
                 System.out.println("Loading existing trained model...");
                 predictor.loadModel(modelPath);
+                System.out.println("Model loaded successfully.");
             }
 
+            // Launch GUI
             SwingUtilities.invokeLater(() ->
                     new PowerGuardGUI(predictor).setVisible(true)
             );
@@ -62,8 +59,8 @@ public class Main {
             e.printStackTrace();
             JOptionPane.showMessageDialog(
                     null,
-                    "Error: " + e.getMessage(),
-                    "Startup Error",
+                    "Startup Error: " + e.getMessage(),
+                    "Error",
                     JOptionPane.ERROR_MESSAGE
             );
         }
