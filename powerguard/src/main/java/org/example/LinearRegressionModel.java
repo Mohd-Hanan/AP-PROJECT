@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.AdditiveRegression;
@@ -11,6 +12,7 @@ import weka.classifiers.functions.LinearRegression;
 import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.trees.REPTree;
 import weka.classifiers.trees.RandomForest;
+
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -19,52 +21,56 @@ import weka.core.SerializationHelper;
 import weka.core.converters.ConverterUtils.DataSource;
 
 public class LinearRegressionModel {
+
     private Classifier model;
     private Instances datasetHeader;
     private boolean trainStatus = false;
 
+    /* =======================
+       Evaluation Result
+    ======================== */
     public static class ModelEvaluationResult {
+
         public final String modelName;
         public final double mae;
         public final double rmse;
         public final double r2;
-        public final double accuracyPercent;
         public final int trainRows;
         public final int testRows;
 
-        public ModelEvaluationResult(String modelName, double mae, double rmse, double r2, int trainRows, int testRows) {
+        public ModelEvaluationResult(String modelName,
+                                     double mae,
+                                     double rmse,
+                                     double r2,
+                                     int trainRows,
+                                     int testRows) {
             this.modelName = modelName;
             this.mae = mae;
             this.rmse = rmse;
             this.r2 = r2;
-            this.accuracyPercent = Math.max(0.0, Math.min(100.0, r2 * 100.0));
             this.trainRows = trainRows;
             this.testRows = testRows;
         }
 
         @Override
         public String toString() {
-            return String.format("%s -> Train: %d, Test: %d, MAE: %.5f, RMSE: %.5f, R²: %.5f (Accuracy: %.2f%%)",
-                    modelName, trainRows, testRows, mae, rmse, r2, accuracyPercent);
+            return String.format(
+                    "%s -> Train: %d, Test: %d | MAE: %.5f | RMSE: %.5f | R²: %.5f",
+                    modelName, trainRows, testRows, mae, rmse, r2
+            );
         }
     }
 
-    public static class ModelBenchmarkResult {
-        public final ModelEvaluationResult bestResult;
-        public final Map<String, ModelEvaluationResult> allResults;
-
-        public ModelBenchmarkResult(ModelEvaluationResult bestResult, Map<String, ModelEvaluationResult> allResults) {
-            this.bestResult = bestResult;
-            this.allResults = allResults;
-        }
-    }
-
+    /* =======================
+       Initialize Header
+    ======================== */
     public void initializeHeader() {
-        if (this.datasetHeader != null) {
+
+        if (this.datasetHeader != null)
             return;
-        }
 
         ArrayList<Attribute> attributes = new ArrayList<>();
+
         attributes.add(new Attribute("fan"));
         attributes.add(new Attribute("refrigerator"));
         attributes.add(new Attribute("airconditioner"));
@@ -86,89 +92,74 @@ public class LinearRegressionModel {
         attributes.add(new Attribute("ave_monthly_income"));
         attributes.add(new Attribute("num_children"));
         attributes.add(new Attribute("is_urban"));
-        attributes.add(new Attribute("units"));
 
-        this.datasetHeader = new Instances("PowerPredictionStructure", attributes, 0);
-        this.datasetHeader.setClassIndex(this.datasetHeader.numAttributes() - 1);
+        attributes.add(new Attribute("units")); // target
+
+        datasetHeader = new Instances("PowerPredictionStructure", attributes, 0);
+        datasetHeader.setClassIndex(datasetHeader.numAttributes() - 1);
     }
 
-    public void trainModel(String datasetPath) throws Exception {
+    /* =======================
+       Train & Benchmark
+    ======================== */
+    public ModelEvaluationResult trainAndSelectBestModel(String datasetPath,
+                                                         double testRatio,
+                                                         long seed) throws Exception {
+
         DataSource source = new DataSource(datasetPath);
-        Instances data = source.getDataSet();
+        Instances dataset = source.getDataSet();
 
-        if (data.classIndex() == -1) {
-            data.setClassIndex(data.numAttributes() - 1);
-        }
-
-        model = new LinearRegression();
-        model.buildClassifier(data);
-
-        this.datasetHeader = new Instances(data, 0);
-        this.trainStatus = true;
-
-        System.out.println("Training complete (LinearRegression). Rows: " + data.numInstances());
-    }
-
-    public ModelBenchmarkResult trainAndSelectBestModel(Instances dataset, double testRatio, long seed) throws Exception {
-        if (dataset == null || dataset.numInstances() < 2) {
-            throw new IllegalArgumentException("Need at least 2 rows to train/test models.");
-        }
-
-        if (dataset.classIndex() == -1) {
+        if (dataset.classIndex() == -1)
             dataset.setClassIndex(dataset.numAttributes() - 1);
-        }
 
         Instances shuffled = new Instances(dataset);
         shuffled.randomize(new Random(seed));
 
-        int testSize = Math.max(1, (int) Math.round(shuffled.numInstances() * testRatio));
-        if (testSize >= shuffled.numInstances()) {
-            testSize = shuffled.numInstances() - 1;
-        }
+        int testSize = Math.max(1, (int) (shuffled.numInstances() * testRatio));
         int trainSize = shuffled.numInstances() - testSize;
 
         Instances trainData = new Instances(shuffled, 0, trainSize);
         Instances testData = new Instances(shuffled, trainSize, testSize);
 
         LinkedHashMap<String, Classifier> candidates = new LinkedHashMap<>();
+
         candidates.put("LinearRegression", new LinearRegression());
         candidates.put("RandomForest", new RandomForest());
         candidates.put("DecisionTree", new REPTree());
 
-        AdditiveRegression gradientBoosting = new AdditiveRegression();
-        gradientBoosting.setClassifier(new REPTree());
-        candidates.put("GradientBoosting", gradientBoosting);
-        candidates.put("MultilayerPerceptron", new MultilayerPerceptron());
+        AdditiveRegression gradientBoost = new AdditiveRegression();
+        gradientBoost.setClassifier(new REPTree());
+        candidates.put("GradientBoosting", gradientBoost);
 
-        Map<String, ModelEvaluationResult> allResults = new LinkedHashMap<>();
+        candidates.put("NeuralNetwork", new MultilayerPerceptron());
+
         ModelEvaluationResult bestResult = null;
         Classifier bestModel = null;
 
         for (Map.Entry<String, Classifier> entry : candidates.entrySet()) {
-            String modelName = entry.getKey();
+
+            String name = entry.getKey();
             Classifier candidate = entry.getValue();
 
             candidate.buildClassifier(trainData);
 
-            Evaluation evaluation = new Evaluation(trainData);
-            evaluation.evaluateModel(candidate, testData);
+            Evaluation eval = new Evaluation(trainData);
+            eval.evaluateModel(candidate, testData);
 
-            double correlation = evaluation.correlationCoefficient();
-            if (Double.isNaN(correlation)) {
-                correlation = 0.0;
-            }
-            double rSquared = correlation * correlation;
+            double correlation = eval.correlationCoefficient();
+            double r2 = Double.isNaN(correlation) ? 0 : correlation * correlation;
 
-            ModelEvaluationResult result = new ModelEvaluationResult(
-                    modelName,
-                    evaluation.meanAbsoluteError(),
-                    evaluation.rootMeanSquaredError(),
-                    rSquared,
-                    trainData.numInstances(),
-                    testData.numInstances()
-            );
+            ModelEvaluationResult result =
+                    new ModelEvaluationResult(
+                            name,
+                            eval.meanAbsoluteError(),
+                            eval.rootMeanSquaredError(),
+                            r2,
+                            trainData.numInstances(),
+                            testData.numInstances()
+                    );
 
-            allResults.put(modelName, result);
+            System.out.println(result);
 
             if (bestResult == null || result.r2 > bestResult.r2) {
                 bestResult = result;
@@ -176,59 +167,52 @@ public class LinearRegressionModel {
             }
         }
 
-        if (bestModel == null || bestResult == null) {
-            throw new IllegalStateException("Model benchmarking produced no valid model.");
-        }
+        if (bestModel == null)
+            throw new IllegalStateException("No valid model selected.");
 
         this.model = bestModel;
         this.datasetHeader = new Instances(trainData, 0);
         this.trainStatus = true;
 
-        return new ModelBenchmarkResult(bestResult, allResults);
+        System.out.println("Best model selected: " + bestResult.modelName);
+
+        return bestResult;
     }
 
-    public double predict(double rawKWh) throws Exception {
-        if (!trainStatus || model == null) {
-            throw new IllegalStateException("Model not initialized. Train or load model first.");
-        }
-        if (datasetHeader == null) {
-            throw new IllegalStateException("Dataset header not initialized. Train or load model with header first.");
-        }
+    /* =======================
+       Predict
+    ======================== */
+    public double predict(double rawFeatureValue) throws Exception {
 
-        double[] features = new double[datasetHeader.numAttributes()];
-        features[0] = rawKWh;
+        if (!trainStatus || model == null)
+            throw new IllegalStateException("Model not trained.");
 
-        Instance instance = new DenseInstance(1.0, features);
+        double[] values = new double[datasetHeader.numAttributes()];
+        values[0] = rawFeatureValue;
+
+        Instance instance = new DenseInstance(1.0, values);
         instance.setDataset(datasetHeader);
 
         return model.classifyInstance(instance);
     }
 
+    /* =======================
+       Save / Load
+    ======================== */
     public void saveModel(String path) throws Exception {
         Object[] payload = new Object[]{model, datasetHeader};
         SerializationHelper.write(path, payload);
     }
 
     public void loadModel(String path) throws Exception {
-        Object saved = SerializationHelper.read(path);
 
-        if (saved instanceof Object[]) {
-            Object[] payload = (Object[]) saved;
-            if (payload.length > 0 && payload[0] instanceof Classifier) {
-                this.model = (Classifier) payload[0];
-            }
-            if (payload.length > 1 && payload[1] instanceof Instances) {
-                this.datasetHeader = (Instances) payload[1];
-            }
-        } else if (saved instanceof Classifier) {
-            this.model = (Classifier) saved;
-        } else {
-            throw new IllegalStateException("Unsupported model payload type: " + saved.getClass().getName());
-        }
+        Object[] payload = (Object[]) SerializationHelper.read(path);
+
+        this.model = (Classifier) payload[0];
+
+        if (payload.length > 1 && payload[1] instanceof Instances)
+            this.datasetHeader = (Instances) payload[1];
 
         this.trainStatus = true;
-        if (this.datasetHeader == null) {
-            initializeHeader();
-        }
     }
 }
