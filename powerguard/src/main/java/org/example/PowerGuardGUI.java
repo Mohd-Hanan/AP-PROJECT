@@ -26,7 +26,12 @@ public class PowerGuardGUI extends JFrame {
     private JComboBox<String> comboCompany, comboDevice;
     private DefaultTableModel tableModel;
     private JTable historyTable;
-
+    private JLabel lblModelName;
+    private JLabel lblAccuracy;
+    private JLabel lblRMSE;
+    private String bestModelName;
+    private double accuracy;
+    private double rmse;
     // 2026 Modern Color Palette
     private final Color COLOR_BG = new Color(18, 18, 18);
     private final Color COLOR_CARD = new Color(30, 30, 35);
@@ -34,7 +39,13 @@ public class PowerGuardGUI extends JFrame {
     private final Color COLOR_SUCCESS = new Color(0, 230, 118);
     private final Color COLOR_DANGER = new Color(255, 82, 82);
 
-    public PowerGuardGUI(LinearRegressionModel predictor) {
+    public PowerGuardGUI(LinearRegressionModel predictor,
+                         String bestModelName,
+                         double accuracy,
+                         double rmse) {
+        this.bestModelName = bestModelName;
+        this.accuracy = accuracy;
+        this.rmse = rmse;
         this.predictor = predictor;
         try { this.predictor.initializeHeader(); } catch (Exception e) {}
         try { UIManager.setLookAndFeel(new FlatDarkLaf()); } catch (Exception e) {}
@@ -129,66 +140,91 @@ public class PowerGuardGUI extends JFrame {
     }
 
     private JPanel createInputCard() {
+
         JPanel card = new JPanel(new GridBagLayout());
         card.setBackground(COLOR_CARD);
         card.setPreferredSize(new Dimension(320, 800));
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(8, 0, 8, 0);
         gbc.gridx = 0;
 
-        // Search Section
+        // ================= MODEL INFO SECTION =================
+        lblModelName = new JLabel("Model: " + bestModelName);
+        lblAccuracy = new JLabel(
+                accuracy < 0 ? "R²: Not Available"
+                        : String.format("R²: %.4f", accuracy)
+        );
+        lblRMSE = new JLabel(String.format("RMSE: %.4f", rmse));
+
+        lblModelName.setForeground(Color.WHITE);
+        lblAccuracy.setForeground(COLOR_SUCCESS);
+        lblRMSE.setForeground(Color.GRAY);
+
+        gbc.gridy = 0; card.add(lblModelName, gbc);
+        gbc.gridy = 1; card.add(lblAccuracy, gbc);
+        gbc.gridy = 2; card.add(lblRMSE, gbc);
+
+        gbc.gridy = 3; card.add(new JSeparator(), gbc);
+
+        // ================= SEARCH =================
         txtSearch = new JTextField("Search...");
-        txtSearch.setBackground(new Color(45, 45, 50));
-        txtSearch.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        gbc.gridy = 0; card.add(new JLabel("QUICK SEARCH"), gbc);
-        gbc.gridy = 1; card.add(txtSearch, gbc);
+        txtSearch.setBackground(new Color(45,45,50));
+        txtSearch.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+
+        gbc.gridy = 4; card.add(new JLabel("QUICK SEARCH"), gbc);
+        gbc.gridy = 5; card.add(txtSearch, gbc);
 
         JButton btnSearch = createModernButton("FIND APPLIANCE", COLOR_ACCENT);
-        gbc.gridy = 2; card.add(btnSearch, gbc);
+        gbc.gridy = 6; card.add(btnSearch, gbc);
 
-        // Inputs
-        gbc.gridy = 3; card.add(new JSeparator(), gbc);
+        // ================= INPUTS =================
         comboCompany = new JComboBox<>(deviceLibrary.keySet().toArray(new String[0]));
         comboDevice = new JComboBox<>();
-        gbc.gridy = 4; card.add(new JLabel("MANUFACTURER"), gbc);
-        gbc.gridy = 5; card.add(comboCompany, gbc);
-        gbc.gridy = 6; card.add(new JLabel("MODEL"), gbc);
-        gbc.gridy = 7; card.add(comboDevice, gbc);
+
+        gbc.gridy = 7; card.add(new JLabel("MANUFACTURER"), gbc);
+        gbc.gridy = 8; card.add(comboCompany, gbc);
+        gbc.gridy = 9; card.add(new JLabel("MODEL"), gbc);
+        gbc.gridy = 10; card.add(comboDevice, gbc);
 
         txtQuantity = new JTextField("1");
         txtHours = new JTextField("5.5");
         txtBudget = new JTextField("500");
-        gbc.gridy = 8; card.add(new JLabel("QUANTITY"), gbc);
-        gbc.gridy = 9; card.add(txtQuantity, gbc);
-        gbc.gridy = 10; card.add(new JLabel("DAILY HOURS"), gbc);
-        gbc.gridy = 11; card.add(txtHours, gbc);
-        gbc.gridy = 12; card.add(new JLabel("LIMIT (₹)"), gbc);
-        gbc.gridy = 13; card.add(txtBudget, gbc);
 
-        // Dynamic Status Card
+        gbc.gridy = 11; card.add(new JLabel("QUANTITY"), gbc);
+        gbc.gridy = 12; card.add(txtQuantity, gbc);
+        gbc.gridy = 13; card.add(new JLabel("DAILY HOURS"), gbc);
+        gbc.gridy = 14; card.add(txtHours, gbc);
+        gbc.gridy = 15; card.add(new JLabel("LIMIT (₹)"), gbc);
+        gbc.gridy = 16; card.add(txtBudget, gbc);
+
         pnlStatus = new JPanel();
         pnlStatus.setPreferredSize(new Dimension(280, 5));
         pnlStatus.setBackground(COLOR_SUCCESS);
-        gbc.gridy = 14; card.add(new JLabel("BUDGET CAP"), gbc);
-        gbc.gridy = 15; card.add(pnlStatus, gbc);
+
+        gbc.gridy = 17; card.add(new JLabel("BUDGET CAP"), gbc);
+        gbc.gridy = 18; card.add(pnlStatus, gbc);
 
         JButton btnPredict = createModernButton("PREDICT BILL", COLOR_ACCENT);
         btnPredict.addActionListener(e -> calculate());
-        gbc.gridy = 16; card.add(btnPredict, gbc);
+        gbc.gridy = 19; card.add(btnPredict, gbc);
 
-        // Results Card
-        JPanel resPanel = new JPanel(new GridLayout(2, 1));
-        resPanel.setBackground(new Color(40, 40, 45));
+        JPanel resPanel = new JPanel(new GridLayout(2,1));
+        resPanel.setBackground(new Color(40,40,45));
+
         lblResult = new JLabel("₹0.00", SwingConstants.CENTER);
         lblResult.setFont(new Font("Inter", Font.BOLD, 28));
         lblResult.setForeground(COLOR_SUCCESS);
+
         lblCarbon = new JLabel("0.00 kg CO2", SwingConstants.CENTER);
         lblCarbon.setForeground(Color.GRAY);
+
         resPanel.add(lblResult);
         resPanel.add(lblCarbon);
-        gbc.gridy = 17; card.add(resPanel, gbc);
+
+        gbc.gridy = 20; card.add(resPanel, gbc);
 
         comboCompany.addActionListener(e -> updateDeviceList());
         btnSearch.addActionListener(e -> filterDevices(txtSearch.getText().trim()));
@@ -247,33 +283,44 @@ public class PowerGuardGUI extends JFrame {
 
     private void calculate() {
         try {
+
             String company = (String) comboCompany.getSelectedItem();
             String device = (String) comboDevice.getSelectedItem();
             int rating = deviceLibrary.get(company).get(device);
+
             double hours = Double.parseDouble(txtHours.getText());
             double budgetLimit = Double.parseDouble(txtBudget.getText());
+            int quantity = Integer.parseInt(txtQuantity.getText());
 
-            double hourlyKW = (rating / 1000.0) * Integer.parseInt(txtQuantity.getText());
-            double predictedHourlyUnits = predictor.predictUnits(hourlyKW);
-            double totalUnits = predictedHourlyUnits * hours;
-            double cost = predictor.predictElectricityBill(hourlyKW, hours, UNIT_RATE);
+            double hourlyKW = (rating / 1000.0) * quantity;
+
+            double predictedUnits = predictor.predict(hourlyKW);
+            double totalUnits = predictedUnits * hours;
+            double cost = totalUnits * UNIT_RATE;
+
             double carbon = totalUnits * 0.85;
 
             lblResult.setText(String.format("₹%.2f", cost));
             lblCarbon.setText(String.format("%.2f kg CO2", carbon));
 
             boolean over = cost > budgetLimit;
+
             pnlStatus.setBackground(over ? COLOR_DANGER : COLOR_SUCCESS);
             lblResult.setForeground(over ? COLOR_DANGER : COLOR_SUCCESS);
 
-            dataset.addValue(cost, "Cost", device + " (" + (dataset.getColumnCount() + 1) + ")");
-            tableModel.addRow(new Object[]{device, String.format("₹%.2f", cost), String.format("%.2f kg", carbon), over ? "OVER" : "SAFE"});
+            dataset.addValue(cost, "Cost",
+                    device + " (" + (dataset.getColumnCount()+1) + ")");
 
-            org.jfree.chart.plot.CategoryPlot plot = chartPanel.getChart().getCategoryPlot();
-            org.jfree.chart.renderer.category.BarRenderer renderer = (org.jfree.chart.renderer.category.BarRenderer) plot.getRenderer();
-            renderer.setSeriesPaint(0, over ? COLOR_DANGER : COLOR_ACCENT);
+            tableModel.addRow(new Object[]{
+                    device,
+                    String.format("₹%.2f", cost),
+                    String.format("%.2f kg", carbon),
+                    over ? "OVER" : "SAFE"
+            });
 
-        } catch (Exception e) { JOptionPane.showMessageDialog(this, "System Error: " + e.getMessage()); }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "System Error: " + e.getMessage());
+        }
     }
 
     private void saveChartImage() {

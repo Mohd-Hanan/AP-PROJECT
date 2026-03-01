@@ -8,7 +8,11 @@ public class Main {
     public static void main(String[] args) {
 
         String arffPath = "target/final_electricity_dataset.arff";
-        String modelPath = "src/main/resources/data/power_model.model";
+        String modelPath = "target/power_model.model";
+        File targetDir = new File("target");
+        if (!targetDir.exists()) {
+            targetDir.mkdirs();
+        }
         String csvPath = Main.class
                 .getClassLoader()
                 .getResource("data/final_electricity_dataset.csv")
@@ -25,9 +29,11 @@ public class Main {
                 throw new IllegalStateException("Dataset not found at: " + csvPath);
             }
 
+            LinearRegressionModel.ModelEvaluationResult bestResult;
+
             boolean retrainNeeded =
                     !modelFile.exists() ||
-                    sourceFile.lastModified() > modelFile.lastModified();
+                            sourceFile.lastModified() > modelFile.lastModified();
 
             if (retrainNeeded) {
 
@@ -35,8 +41,7 @@ public class Main {
                 DataHandler.convertCSVtoARFF(csvPath, arffPath);
 
                 System.out.println("Step 2/3 - Benchmarking models...");
-                LinearRegressionModel.ModelEvaluationResult bestResult =
-                        predictor.trainAndSelectBestModel(arffPath, 0.2, 42);
+                bestResult = predictor.trainAndSelectBestModel(arffPath, 0.2, 42);
 
                 System.out.println("Step 3/3 - Saving best model...");
                 predictor.saveModel(modelPath);
@@ -51,11 +56,26 @@ public class Main {
                 System.out.println("Loading existing trained model...");
                 predictor.loadModel(modelPath);
                 System.out.println("Model loaded successfully.");
+
+                bestResult = new LinearRegressionModel.ModelEvaluationResult(
+                        "Previously Trained Model",
+                        0,
+                        0,
+                        -1,     // use -1 to indicate unknown
+                        0,
+                        0
+                );
             }
 
-            // Launch GUI
+            LinearRegressionModel.ModelEvaluationResult finalResult = bestResult;
+
             SwingUtilities.invokeLater(() ->
-                    new PowerGuardGUI(predictor).setVisible(true)
+                    new PowerGuardGUI(
+                            predictor,
+                            finalResult.modelName,
+                            finalResult.r2,
+                            finalResult.rmse
+                    ).setVisible(true)
             );
 
         } catch (Exception e) {
