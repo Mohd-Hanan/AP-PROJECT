@@ -161,6 +161,7 @@ public class LinearRegressionModel {
 
             System.out.println(result);
 
+            // RMSE-based selection (industry preferred)
             if (bestResult == null || result.rmse < bestResult.rmse) {
                 bestResult = result;
                 bestModel = candidate;
@@ -195,12 +196,14 @@ public class LinearRegressionModel {
 
         return model.classifyInstance(instance);
     }
+
     /* =======================
        Backward Compatibility Wrapper
     ======================= */
     public void trainModel(String datasetPath) throws Exception {
         trainAndSelectBestModel(datasetPath, 0.2, 42);
     }
+
     /* =======================
        Save / Load
     ======================== */

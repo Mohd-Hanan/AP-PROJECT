@@ -254,9 +254,9 @@ public class PowerGuardGUI extends JFrame {
             double budgetLimit = Double.parseDouble(txtBudget.getText());
 
             double hourlyKW = (rating / 1000.0) * Integer.parseInt(txtQuantity.getText());
-            double predictedHourlyUnits = predictor.predict(hourlyKW);
+            double predictedHourlyUnits = predictor.predictUnits(hourlyKW);
             double totalUnits = predictedHourlyUnits * hours;
-            double cost = totalUnits * UNIT_RATE;
+            double cost = predictor.predictElectricityBill(hourlyKW, hours, UNIT_RATE);
             double carbon = totalUnits * 0.85;
 
             lblResult.setText(String.format("₹%.2f", cost));

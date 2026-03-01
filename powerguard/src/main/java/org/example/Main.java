@@ -24,7 +24,7 @@ public class Main {
 
             boolean retrainNeeded =
                     !modelFile.exists() ||
-                            sourceFile.lastModified() > modelFile.lastModified();
+                    sourceFile.lastModified() > modelFile.lastModified();
 
             if (retrainNeeded) {
 
