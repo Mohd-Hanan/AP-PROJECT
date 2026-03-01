@@ -7,9 +7,12 @@ public class Main {
 
     public static void main(String[] args) {
 
-        String arffPath = "src/main/resources/data/final_electricity_dataset.arff";
+        String arffPath = "target/final_electricity_dataset.arff";
         String modelPath = "src/main/resources/data/power_model.model";
-        String csvPath = "src/main/resources/data/final electricity dataset.csv";
+        String csvPath = Main.class
+                .getClassLoader()
+                .getResource("data/final_electricity_dataset.csv")
+                .getPath();
 
         LinearRegressionModel predictor = new LinearRegressionModel();
 

@@ -179,7 +179,15 @@ public class LinearRegressionModel {
 
         return bestResult;
     }
+    public double predictUnits(double rawKWh) throws Exception {
+        return predict(rawKWh);
+    }
 
+    public double predictElectricityBill(double rawKWh, double hours, double unitRate) throws Exception {
+        double predictedHourlyUnits = predict(rawKWh);
+        double totalUnits = predictedHourlyUnits * hours;
+        return totalUnits * unitRate;
+    }
     /* =======================
        Predict
     ======================== */
