@@ -253,11 +253,13 @@ public class PowerGuardGUI extends JFrame {
             double hours = Double.parseDouble(txtHours.getText());
             double budgetLimit = Double.parseDouble(txtBudget.getText());
 
-            double hourlyKW = (rating / 1000.0) * Integer.parseInt(txtQuantity.getText());
-            double predictedHourlyUnits = predictor.predict(hourlyKW);
-            double totalUnits = predictedHourlyUnits * hours;
-            double cost = totalUnits * UNIT_RATE;
-            double carbon = totalUnits * 0.85;
+            int quantity = Integer.parseInt(txtQuantity.getText());
+            double hourlyKW = (rating / 1000.0) * quantity;
+            double[] features = buildFeatureVector(device, rating, quantity, hours);
+
+            double predictedUnits = predictor.predict(features);
+            double cost = predictedUnits * UNIT_RATE;
+            double carbon = predictedUnits * 0.85;
 
             lblResult.setText(String.format("₹%.2f", cost));
             lblCarbon.setText(String.format("%.2f kg CO2", carbon));
@@ -274,6 +276,73 @@ public class PowerGuardGUI extends JFrame {
             renderer.setSeriesPaint(0, over ? COLOR_DANGER : COLOR_ACCENT);
 
         } catch (Exception e) { JOptionPane.showMessageDialog(this, "System Error: " + e.getMessage()); }
+    }
+
+
+    private double[] buildFeatureVector(String device, int ratingWatts, int quantity, double dailyHours) {
+        String deviceKey = device.toLowerCase();
+        boolean isAcDevice = deviceKey.contains("ac");
+        boolean isTvDevice = deviceKey.contains("tv") || deviceKey.contains("television") || deviceKey.contains("monitor");
+
+        double fan = deviceKey.contains("fan") ? ratingWatts * quantity / 100.0 : 0.0;
+        double refrigerator = deviceKey.contains("refrigerator") ? ratingWatts * quantity / 100.0 : 0.0;
+        double airConditioner = isAcDevice ? ratingWatts * quantity / 100.0 : 0.0;
+        double television = deviceKey.contains("tv") || deviceKey.contains("television") ? ratingWatts * quantity / 100.0 : 0.0;
+        double monitor = deviceKey.contains("monitor") ? ratingWatts * quantity / 100.0 : 0.0;
+
+        double monthlyHours = dailyHours * 30.0;
+        double tariffRate = UNIT_RATE;
+
+        double forecastWindProduction = 430.0;
+        double systemLoadEa = 4000.0;
+        double smpEa = 55.0;
+        double co2Intensity = 470.0;
+        double actualWindProduction = 430.0;
+
+        double numRooms = 3.0;
+        double numPeople = 4.0;
+        double houseArea = 1000.0;
+        double isAc = isAcDevice ? 1.0 : 0.0;
+        double isTv = isTvDevice ? 1.0 : 0.0;
+        double isFlat = 0.0;
+        double aveMonthlyIncome = 30000.0;
+        double numChildren = 1.0;
+        double isUrban = 1.0;
+
+        java.util.Map<String, Double> valueByName = new java.util.HashMap<>();
+        valueByName.put("fan", fan);
+        valueByName.put("refrigerator", refrigerator);
+        valueByName.put("airconditioner", airConditioner);
+        valueByName.put("television", television);
+        valueByName.put("monitor", monitor);
+        valueByName.put("monthlyhours", monthlyHours);
+        valueByName.put("tariffrate", tariffRate);
+        valueByName.put("forecastwindproduction", forecastWindProduction);
+        valueByName.put("systemloadea", systemLoadEa);
+        valueByName.put("smpea", smpEa);
+        valueByName.put("co2intensity", co2Intensity);
+        valueByName.put("actualwindproduction", actualWindProduction);
+        valueByName.put("num_rooms", numRooms);
+        valueByName.put("num_people", numPeople);
+        valueByName.put("housearea", houseArea);
+        valueByName.put("is_ac", isAc);
+        valueByName.put("is_tv", isTv);
+        valueByName.put("is_flat", isFlat);
+        valueByName.put("ave_monthly_income", aveMonthlyIncome);
+        valueByName.put("num_children", numChildren);
+        valueByName.put("is_urban", isUrban);
+
+        String[] featureOrder = predictor.getFeatureOrder();
+        double[] features = new double[featureOrder.length];
+        for (int i = 0; i < featureOrder.length; i++) {
+            features[i] = valueByName.getOrDefault(featureOrder[i], 0.0);
+        }
+
+        if (features.length != predictor.getExpectedFeatureCount()) {
+            throw new IllegalStateException("Feature vector size mismatch. Expected " + predictor.getExpectedFeatureCount() + " but got " + features.length);
+        }
+
+        return features;
     }
 
     private void saveChartImage() {
