@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import weka.core.Attribute;
+import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ArffSaver;
 import weka.core.converters.CSVLoader;
@@ -95,13 +97,17 @@ public class DataHandler {
         missingFilter.setInputFormat(data);
         Instances missingHandled = Filter.useFilter(data, missingFilter);
 
+        Instances withConnectedLoad = ensureConnectedLoadKw(missingHandled);
+
         // Remove leakage if predicting units
-        Instances deLeaked = removeElectricityBillIfUnitsTarget(missingHandled);
+        Instances deLeaked = removeElectricityBillIfUnitsTarget(withConnectedLoad);
+
+        Instances simplified = keepOnlyConnectedLoadAndUnits(deLeaked);
 
         // Normalize features
         Normalize normalizeFilter = new Normalize();
-        normalizeFilter.setInputFormat(deLeaked);
-        Instances normalized = Filter.useFilter(deLeaked, normalizeFilter);
+        normalizeFilter.setInputFormat(simplified);
+        Instances normalized = Filter.useFilter(simplified, normalizeFilter);
 
         normalized.setClassIndex(normalized.numAttributes() - 1);
 
@@ -110,7 +116,74 @@ public class DataHandler {
                 + ", Columns: "
                 + normalized.numAttributes());
 
-        return normalized;
+       return normalized;
+    }
+
+    /* ============================
+       Ensure connected_load_kw
+    ============================ */
+    private static Instances ensureConnectedLoadKw(Instances data) {
+        if (data.attribute("connected_load_kw") != null) {
+            return data;
+        }
+
+        int fanIndex = indexOrThrow(data, "fan") + 1;
+        int refrigeratorIndex = indexOrThrow(data, "refrigerator") + 1;
+        int airconditionerIndex = indexOrThrow(data, "airconditioner") + 1;
+        int televisionIndex = indexOrThrow(data, "television") + 1;
+        int monitorIndex = indexOrThrow(data, "monitor") + 1;
+
+        Instances updated = new Instances(data);
+        Attribute connectedLoad = new Attribute("connected_load_kw");
+        updated.insertAttributeAt(connectedLoad, 0);
+
+        int connectedIndex = updated.attribute("connected_load_kw").index();
+        int classIndex = updated.classIndex();
+
+        for (int i = 0; i < updated.numInstances(); i++) {
+            Instance instance = updated.instance(i);
+            double connectedLoadKw =
+                    (instance.value(fanIndex)
+                            + instance.value(refrigeratorIndex)
+                            + instance.value(airconditionerIndex)
+                            + instance.value(televisionIndex)
+                            + instance.value(monitorIndex)) / 1000.0;
+            instance.setValue(connectedIndex, connectedLoadKw);
+        }
+
+        if (classIndex >= 0) {
+            updated.setClassIndex(classIndex + 1);
+        }
+
+        return updated;
+    }
+
+    private static int indexOrThrow(Instances data, String attributeName) {
+        Attribute attribute = data.attribute(attributeName);
+        if (attribute == null) {
+            throw new IllegalStateException("Missing attribute: " + attributeName);
+        }
+        return attribute.index();
+    }
+
+    private static Instances keepOnlyConnectedLoadAndUnits(Instances data) throws Exception {
+        Attribute connectedLoad = data.attribute("connected_load_kw");
+        Attribute units = data.attribute("units");
+        if (connectedLoad == null || units == null) {
+            throw new IllegalStateException("Dataset must contain 'connected_load_kw' and 'units'.");
+        }
+
+        int connectedIndex = connectedLoad.index();
+        int unitsIndex = units.index();
+
+        Remove remove = new Remove();
+        remove.setAttributeIndicesArray(new int[]{connectedIndex, unitsIndex});
+        remove.setInvertSelection(true);
+        remove.setInputFormat(data);
+
+        Instances filtered = Filter.useFilter(data, remove);
+        filtered.setClassIndex(filtered.attribute("units").index());
+        return filtered;
     }
 
     /* ============================

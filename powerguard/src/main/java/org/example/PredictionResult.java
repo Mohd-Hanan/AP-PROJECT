@@ -5,8 +5,12 @@ public class PredictionResult {
     private double estimatedCost; // From UML [cite: 163]
 
     public PredictionResult(double units, double costPerUnit) {
+        this(units);
+    }
+
+    public PredictionResult(double units) {
         this.predictedEnergyUnits = units;
-        this.estimatedCost = units * costPerUnit;
+        this.estimatedCost = KSEBBillCalculator.calculate(units);
     }
 
     // Fulfills "User views prediction result" [cite: 141, 166]

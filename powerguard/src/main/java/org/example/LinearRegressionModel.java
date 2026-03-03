@@ -1,6 +1,5 @@
 package org.example;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -13,7 +12,6 @@ import weka.classifiers.functions.MultilayerPerceptron;
 import weka.classifiers.trees.REPTree;
 import weka.classifiers.trees.RandomForest;
 
-import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -59,44 +57,6 @@ public class LinearRegressionModel {
                     modelName, trainRows, testRows, mae, rmse, r2
             );
         }
-    }
-
-    /* =======================
-       Initialize Header
-    ======================== */
-    public void initializeHeader() {
-
-        if (this.datasetHeader != null)
-            return;
-
-        ArrayList<Attribute> attributes = new ArrayList<>();
-
-        attributes.add(new Attribute("fan"));
-        attributes.add(new Attribute("refrigerator"));
-        attributes.add(new Attribute("airconditioner"));
-        attributes.add(new Attribute("television"));
-        attributes.add(new Attribute("monitor"));
-        attributes.add(new Attribute("monthlyhours"));
-        attributes.add(new Attribute("tariffrate"));
-        attributes.add(new Attribute("forecastwindproduction"));
-        attributes.add(new Attribute("systemloadea"));
-        attributes.add(new Attribute("smpea"));
-        attributes.add(new Attribute("co2intensity"));
-        attributes.add(new Attribute("actualwindproduction"));
-        attributes.add(new Attribute("num_rooms"));
-        attributes.add(new Attribute("num_people"));
-        attributes.add(new Attribute("housearea"));
-        attributes.add(new Attribute("is_ac"));
-        attributes.add(new Attribute("is_tv"));
-        attributes.add(new Attribute("is_flat"));
-        attributes.add(new Attribute("ave_monthly_income"));
-        attributes.add(new Attribute("num_children"));
-        attributes.add(new Attribute("is_urban"));
-
-        attributes.add(new Attribute("units")); // target
-
-        datasetHeader = new Instances("PowerPredictionStructure", attributes, 0);
-        datasetHeader.setClassIndex(datasetHeader.numAttributes() - 1);
     }
 
     /* =======================
@@ -179,25 +139,24 @@ public class LinearRegressionModel {
 
         return bestResult;
     }
-    public double predictUnits(double rawKWh) throws Exception {
-        return predict(rawKWh);
-    }
-
-    public double predictElectricityBill(double rawKWh, double hours, double unitRate) throws Exception {
-        double predictedHourlyUnits = predict(rawKWh);
-        double totalUnits = predictedHourlyUnits * hours;
-        return totalUnits * unitRate;
-    }
-    /* =======================
-       Predict
-    ======================== */
-    public double predict(double rawFeatureValue) throws Exception {
-
+    public double predictUnits(double connectedLoadKW) throws Exception {
         if (!trainStatus || model == null)
             throw new IllegalStateException("Model not trained.");
 
+        if (datasetHeader == null)
+            throw new IllegalStateException("Dataset header not loaded.");
+
+        if (datasetHeader.attribute("connected_load_kw") == null)
+            throw new IllegalStateException("Missing 'connected_load_kw' in dataset header.");
+        int featureIndex = datasetHeader.attribute("connected_load_kw").index();
+
         double[] values = new double[datasetHeader.numAttributes()];
-        values[0] = rawFeatureValue;
+        values[featureIndex] = connectedLoadKW;
+
+        int classIndex = datasetHeader.classIndex();
+        if (classIndex >= 0) {
+            values[classIndex] = Double.NaN;
+        }
 
         Instance instance = new DenseInstance(1.0, values);
         instance.setDataset(datasetHeader);

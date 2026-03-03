@@ -47,7 +47,6 @@ public class PowerGuardGUI extends JFrame {
         this.accuracy = accuracy;
         this.rmse = rmse;
         this.predictor = predictor;
-        try { this.predictor.initializeHeader(); } catch (Exception e) {}
         try { UIManager.setLookAndFeel(new FlatDarkLaf()); } catch (Exception e) {}
 
         initializeData();
@@ -294,9 +293,9 @@ public class PowerGuardGUI extends JFrame {
 
             double hourlyKW = (rating / 1000.0) * quantity;
 
-            double predictedUnits = predictor.predict(hourlyKW);
+            double predictedUnits = predictor.predictUnits(hourlyKW);
             double totalUnits = predictedUnits * hours;
-            double cost = totalUnits * UNIT_RATE;
+            double cost = KSEBBillCalculator.calculate(totalUnits);
 
             double carbon = totalUnits * 0.85;
 
