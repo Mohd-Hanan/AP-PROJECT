@@ -138,7 +138,7 @@ public class DataHandler {
         updated.insertAttributeAt(connectedLoad, 0);
 
         int connectedIndex = updated.attribute("connected_load_kw").index();
-        int classIndex = updated.classIndex();
+        int classIndex = data.classIndex();   // use original dataset index
 
         for (int i = 0; i < updated.numInstances(); i++) {
             Instance instance = updated.instance(i);
@@ -151,8 +151,8 @@ public class DataHandler {
             instance.setValue(connectedIndex, connectedLoadKw);
         }
 
-        if (classIndex >= 0) {
-            updated.setClassIndex(classIndex + 1);
+        if (classIndex >= 0 && classIndex < updated.numAttributes()) {
+            updated.setClassIndex(updated.numAttributes() - 1);
         }
 
         return updated;

@@ -50,7 +50,6 @@ public class Main {
                 System.out.println("Best Model Selected: " + bestResult.modelName);
                 System.out.println(bestResult);
                 System.out.println("======================================");
-
             } else {
 
                 System.out.println("Loading existing trained model...");
