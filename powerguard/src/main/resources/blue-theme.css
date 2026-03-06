@@ -36,8 +36,10 @@
 }
 
 .combo-box .list-cell,
-.combo-box .text-field {
+.combo-box .text-field,
+.combo-box-popup .list-view .list-cell {
     -fx-text-fill: #143853;
+    -fx-background-color: #eef7ff;
 }
 
 .primary-button {
@@ -73,7 +75,7 @@
 
 .chart-vertical-grid-lines,
 .chart-horizontal-grid-lines {
-    -fx-stroke: #b8d0e6;
+    -fx-stroke: #8fb4d3;
 }
 
 .axis {
@@ -104,8 +106,10 @@
     -fx-font-weight: 700;
 }
 
-.table-row-cell {
+.table-row-cell,
+.table-cell {
     -fx-background-color: #f7fbff;
+    -fx-text-fill: #0f3e63;
     -fx-border-color: transparent transparent #dcebf8 transparent;
 }
 

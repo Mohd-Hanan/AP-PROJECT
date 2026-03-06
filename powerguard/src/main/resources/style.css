@@ -60,13 +60,17 @@
 }
 
 .chart {
-    -fx-padding: 12;
+    -fx-padding: 14;
     -fx-background-color: transparent;
 }
 
 .chart-title {
     -fx-font-size: 15px;
     -fx-font-weight: 700;
+}
+
+.default-color0.chart-bar {
+    -fx-bar-fill: #2f80ed;
 }
 
 .table-view {

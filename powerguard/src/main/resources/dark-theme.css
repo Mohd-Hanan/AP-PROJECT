@@ -16,7 +16,7 @@
 }
 
 .sidebar-subtitle {
-    -fx-text-fill: #9cb3cc;
+    -fx-text-fill: #b8c8dc;
 }
 
 .panel {
@@ -25,7 +25,7 @@
 }
 
 .field-label {
-    -fx-text-fill: #b7c7d9;
+    -fx-text-fill: #c7d6e6;
 }
 
 .text-field,
@@ -37,8 +37,10 @@
 }
 
 .combo-box .list-cell,
-.combo-box .text-field {
+.combo-box .text-field,
+.combo-box-popup .list-view .list-cell {
     -fx-text-fill: #e6edf3;
+    -fx-background-color: #1b2534;
 }
 
 .primary-button {
@@ -74,19 +76,19 @@
 
 .chart-vertical-grid-lines,
 .chart-horizontal-grid-lines {
-    -fx-stroke: #304055;
+    -fx-stroke: #465a72;
 }
 
 .axis {
-    -fx-tick-label-fill: #b5c9df;
+    -fx-tick-label-fill: #c3d5e8;
 }
 
 .axis-label {
-    -fx-text-fill: #d4e4f7;
+    -fx-text-fill: #e0ecf8;
 }
 
 .default-color0.chart-bar {
-    -fx-bar-fill: linear-gradient(to top, #2f80ed, #56ccf2);
+    -fx-bar-fill: linear-gradient(to top, #39a2ff, #7cd8ff);
 }
 
 .table-view {
@@ -105,8 +107,10 @@
     -fx-font-weight: 700;
 }
 
-.table-row-cell {
+.table-row-cell,
+.table-cell {
     -fx-background-color: #151f2d;
+    -fx-text-fill: #d7e5f3;
     -fx-border-color: transparent transparent #253243 transparent;
 }
 

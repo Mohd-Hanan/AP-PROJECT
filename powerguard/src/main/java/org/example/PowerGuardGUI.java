@@ -1,6 +1,7 @@
 package org.example;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -67,7 +68,6 @@ public class PowerGuardGUI extends Application {
     private final EnergyUsageService usageService = new EnergyUsageService();
 
     private Scene mainScene;
-    private String activeThemeStylesheet;
 
     private BarChart<String, Number> usageChart;
     private NumberAxis usageYAxis;
@@ -128,7 +128,6 @@ public class PowerGuardGUI extends Application {
         BorderPane.setMargin(dashboard, new Insets(0, 12, 0, 12));
 
         mainScene = new Scene(root, 1320, 820);
-        mainScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         applyTheme("Dark Theme");
 
         stage.setTitle("PowerGuard AI Energy Predictor");
@@ -270,7 +269,7 @@ public class PowerGuardGUI extends Application {
         themeLabel.getStyleClass().add("field-label");
 
         comboTheme = new ComboBox<>();
-        comboTheme.getItems().addAll("Dark Theme", "Light Theme", "Blue Analytics Theme");
+        comboTheme.getItems().addAll("Dark Theme", "Blue Analytics Theme");
         comboTheme.getSelectionModel().select("Dark Theme");
         comboTheme.setMaxWidth(Double.MAX_VALUE);
         comboTheme.setOnAction(e -> applyTheme(comboTheme.getValue()));
@@ -493,19 +492,17 @@ public class PowerGuardGUI extends Application {
         }
 
         String stylesheet;
-        if ("Light Theme".equals(selectedTheme)) {
-            stylesheet = getClass().getResource("/light-theme.css").toExternalForm();
-        } else if ("Blue Analytics Theme".equals(selectedTheme)) {
+        if ("Blue Analytics Theme".equals(selectedTheme)) {
             stylesheet = getClass().getResource("/blue-theme.css").toExternalForm();
         } else {
             stylesheet = getClass().getResource("/dark-theme.css").toExternalForm();
         }
+        String base = getClass().getResource("/style.css").toExternalForm();
 
-        if (activeThemeStylesheet != null) {
-            mainScene.getStylesheets().remove(activeThemeStylesheet);
-        }
+        mainScene.getStylesheets().clear();
+        mainScene.getStylesheets().add(base);
         mainScene.getStylesheets().add(stylesheet);
-        activeThemeStylesheet = stylesheet;
+        refreshUsageChartFromTable();
     }
 
     private void updateDeviceList() {
@@ -576,25 +573,25 @@ public class PowerGuardGUI extends Application {
             aggregatedUsage.merge(device, units, Double::sum);
         }
 
-        chartDataByDevice.keySet().removeIf(device -> !aggregatedUsage.containsKey(device));
-        chartSeries.getData().removeIf(data -> !aggregatedUsage.containsKey(data.getXValue()));
+        chartSeries.getData().clear();
+        chartDataByDevice.clear();
 
         for (Map.Entry<String, Double> entry : aggregatedUsage.entrySet()) {
             String device = entry.getKey();
             double value = entry.getValue();
 
-            XYChart.Data<String, Number> point = chartDataByDevice.get(device);
-            if (point == null) {
-                point = new XYChart.Data<>(device, value);
-                chartDataByDevice.put(device, point);
-                chartSeries.getData().add(point);
-            } else {
-                point.setYValue(value);
-            }
+            XYChart.Data<String, Number> point = new XYChart.Data<>(device, value);
+            chartDataByDevice.put(device, point);
+            chartSeries.getData().add(point);
             attachTooltip(point, String.format("%s\nMonthly kWh: %.2f", device, value));
         }
 
+        if (!usageChart.getData().contains(chartSeries)) {
+            usageChart.getData().clear();
+            usageChart.getData().add(chartSeries);
+        }
         usageYAxis.setAutoRanging(true);
+        usageChart.requestLayout();
     }
 
     private double parseUnits(String unitsText) {
@@ -618,9 +615,15 @@ public class PowerGuardGUI extends Application {
             Tooltip.install(data.getNode(), tooltip);
             return;
         }
-        data.nodeProperty().addListener((obs, oldNode, newNode) -> {
-            if (newNode != null) {
-                Tooltip.install(newNode, tooltip);
+        Platform.runLater(() -> {
+            if (data.getNode() != null) {
+                Tooltip.install(data.getNode(), tooltip);
+            } else {
+                data.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                    if (newNode != null) {
+                        Tooltip.install(newNode, tooltip);
+                    }
+                });
             }
         });
     }
