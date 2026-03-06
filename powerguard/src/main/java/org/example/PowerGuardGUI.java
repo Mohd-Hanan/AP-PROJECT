@@ -1,333 +1,266 @@
 package org.example;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.chart.*;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import javafx.geometry.Insets;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.chart.ChartUtils;
-import java.io.File;
+public class PowerGuardGUI extends Application {
 
-public class PowerGuardGUI extends JFrame {
-    private LinearRegressionModel predictor;
-    private final Map<String, Map<String, Integer>> deviceLibrary = new HashMap<>();
-    private final double UNIT_RATE = 8.0;
+    private static LinearRegressionModel predictor;
 
-    private JTextField txtQuantity, txtHours, txtBudget, txtSearch;
-    private JLabel lblResult, lblCarbon;
-    private ChartPanel chartPanel;
-    private DefaultCategoryDataset dataset;
-    private JPanel pnlStatus;
-    private JComboBox<String> comboCompany, comboDevice;
-    private DefaultTableModel tableModel;
-    private JTable historyTable;
-    private JLabel lblModelName;
-    private JLabel lblAccuracy;
-    private JLabel lblRMSE;
-    private String bestModelName;
-    private double accuracy;
-    private double rmse;
-    // 2026 Modern Color Palette
-    private final Color COLOR_BG = new Color(18, 18, 18);
-    private final Color COLOR_CARD = new Color(30, 30, 35);
-    private final Color COLOR_ACCENT = new Color(0, 120, 255);
-    private final Color COLOR_SUCCESS = new Color(0, 230, 118);
-    private final Color COLOR_DANGER = new Color(255, 82, 82);
+    private Map<String, Map<String, Integer>> deviceLibrary = new HashMap<>();
+    private ProgressBar budgetBar;
+    private ComboBox<String> comboCompany;
+    private ComboBox<String> comboDevice;
+    private TextField txtHours;
+    private TextField txtQuantity;
+    private TextField txtBudget;
+    private Label lblResult;
+    private Label lblCarbon;
+    private Label lblModel;
+    private Label lblR2;
+    private Label lblRMSE;
+    private TableView<PredictionResult> historyTable;
+    private XYChart.Series<String, Number> chartSeries;
 
-    public PowerGuardGUI(LinearRegressionModel predictor,
-                         String bestModelName,
-                         double accuracy,
-                         double rmse) {
-        this.bestModelName = bestModelName;
-        this.accuracy = accuracy;
-        this.rmse = rmse;
+    public PowerGuardGUI() {}
+
+    public PowerGuardGUI(LinearRegressionModel predictor) {
         this.predictor = predictor;
-        try { UIManager.setLookAndFeel(new FlatDarkLaf()); } catch (Exception e) {}
+    }
+
+    @Override
+    public void start(Stage stage) {
 
         initializeData();
 
-        setTitle("PowerGuard Professional | AI Energy Analytics");
-        setSize(1300, 850);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        getContentPane().setBackground(COLOR_BG);
-        setLayout(new BorderLayout(15, 15));
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(20));
 
-        setupChart();
-        add(createSidebar(), BorderLayout.WEST);
-        add(createMainDashboard(), BorderLayout.CENTER);
-        add(createInputCard(), BorderLayout.EAST);
-    }
+        root.setLeft(createSidebar());
+        root.setCenter(createDashboard());
+        root.setRight(createInputPanel());
 
-    private void initializeData() {
-        // [Data logic remains same as provided in previous turn]
-        Map<String, Integer> samsung = new HashMap<>();
-        samsung.put("Smart Refrigerator", 400);
-        samsung.put("Inverter AC (1.5 Ton)", 1500);
-
-        Map<String, Integer> sony = new HashMap<>();
-        sony.put("PlayStation 5", 200);
-        sony.put("Bravia 4K TV", 180);
-
-        Map<String, Integer> tesla = new HashMap<>();
-        tesla.put("Wall Connector (11.5kW)", 11500);
-
-        deviceLibrary.put("Samsung", samsung);
-        deviceLibrary.put("Sony", sony);
-        deviceLibrary.put("Tesla (EV)", tesla);
-    }
-
-    private JPanel createSidebar() {
-        JPanel sidebar = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 25));
-        sidebar.setBackground(new Color(25, 25, 30));
-        sidebar.setPreferredSize(new Dimension(180, 700));
-
-        JLabel lblLogo = new JLabel("POWERGUARD");
-        lblLogo.setForeground(COLOR_ACCENT);
-        lblLogo.setFont(new Font("Inter", Font.BOLD, 20));
-        sidebar.add(lblLogo);
-
-        sidebar.add(new JSeparator(SwingConstants.HORIZONTAL));
-
-        JButton btnReset = createModernButton("RESET ALL", new Color(60, 60, 65));
-        btnReset.addActionListener(e -> {
-            dataset.clear();
-            tableModel.setRowCount(0);
-        });
-        sidebar.add(btnReset);
-
-        JButton btnExport = createModernButton("EXPORT PDF", COLOR_ACCENT);
-        btnExport.addActionListener(e -> saveChartImage());
-        sidebar.add(btnExport);
-
-        return sidebar;
-    }
-
-    private JPanel createMainDashboard() {
-        JPanel dashboard = new JPanel(new BorderLayout(20, 20));
-        dashboard.setBackground(COLOR_BG);
-        dashboard.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // Glassmorphism Analytics Header
-        JLabel lblTitle = new JLabel("USAGE ANALYTICS ENGINE");
-        lblTitle.setForeground(Color.GRAY);
-        lblTitle.setFont(new Font("Inter", Font.BOLD, 12));
-        dashboard.add(lblTitle, BorderLayout.NORTH);
-
-        dashboard.add(chartPanel, BorderLayout.CENTER);
-
-        // Modernized Table
-        String[] columns = {"DEVICE", "COST (₹)", "CARBON (KG)", "STATUS"};
-        tableModel = new DefaultTableModel(columns, 0);
-        historyTable = new JTable(tableModel);
-        historyTable.setBackground(new Color(25, 25, 30));
-        historyTable.setRowHeight(40);
-        historyTable.setGridColor(new Color(45, 45, 50));
-        historyTable.setShowVerticalLines(false);
-
-        JScrollPane scrollPane = new JScrollPane(historyTable);
-        scrollPane.getViewport().setBackground(new Color(25, 25, 30));
-        scrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(50, 50, 55)), "LOG HISTORY"));
-        scrollPane.setPreferredSize(new Dimension(600, 250));
-        dashboard.add(scrollPane, BorderLayout.SOUTH);
-
-        return dashboard;
-    }
-
-    private JPanel createInputCard() {
-
-        JPanel card = new JPanel(new GridBagLayout());
-        card.setBackground(COLOR_CARD);
-        card.setPreferredSize(new Dimension(320, 800));
-        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(8, 0, 8, 0);
-        gbc.gridx = 0;
-
-        // ================= MODEL INFO SECTION =================
-        lblModelName = new JLabel("Model: " + bestModelName);
-        lblAccuracy = new JLabel(
-                accuracy < 0 ? "R²: Not Available"
-                        : String.format("R²: %.4f", accuracy)
+        Scene scene = new Scene(root, 1200, 800);
+        scene.getStylesheets().add(
+                getClass().getResource("/style.css").toExternalForm()
         );
-        lblRMSE = new JLabel(String.format("RMSE: %.4f", rmse));
 
-        lblModelName.setForeground(Color.WHITE);
-        lblAccuracy.setForeground(COLOR_SUCCESS);
-        lblRMSE.setForeground(Color.GRAY);
+        stage.setTitle("PowerGuard AI Energy Predictor");
+        stage.setScene(scene);
+        stage.show();
+    }
+    private String modelName;
+    private double r2;
+    private double rmse;
 
-        gbc.gridy = 0; card.add(lblModelName, gbc);
-        gbc.gridy = 1; card.add(lblAccuracy, gbc);
-        gbc.gridy = 2; card.add(lblRMSE, gbc);
+    public PowerGuardGUI(LinearRegressionModel predictor,
+                         String modelName,
+                         double r2,
+                         double rmse) {
 
-        gbc.gridy = 3; card.add(new JSeparator(), gbc);
+        this.predictor = predictor;
+        this.modelName = modelName;
+        this.r2 = r2;
+        this.rmse = rmse;
+    }
+    private void initializeData() {
 
-        // ================= SEARCH =================
-        txtSearch = new JTextField("Search...");
-        txtSearch.setBackground(new Color(45,45,50));
-        txtSearch.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        Map<String,Integer> samsung = new HashMap<>();
+        samsung.put("Smart Refrigerator",400);
+        samsung.put("Inverter AC",1500);
 
-        gbc.gridy = 4; card.add(new JLabel("QUICK SEARCH"), gbc);
-        gbc.gridy = 5; card.add(txtSearch, gbc);
+        Map<String,Integer> sony = new HashMap<>();
+        sony.put("PlayStation 5",200);
+        sony.put("Bravia TV",180);
 
-        JButton btnSearch = createModernButton("FIND APPLIANCE", COLOR_ACCENT);
-        gbc.gridy = 6; card.add(btnSearch, gbc);
+        Map<String,Integer> tesla = new HashMap<>();
+        tesla.put("Wall Connector (11.5kW)",11500);
 
-        // ================= INPUTS =================
-        comboCompany = new JComboBox<>(deviceLibrary.keySet().toArray(new String[0]));
-        comboDevice = new JComboBox<>();
-
-        gbc.gridy = 7; card.add(new JLabel("MANUFACTURER"), gbc);
-        gbc.gridy = 8; card.add(comboCompany, gbc);
-        gbc.gridy = 9; card.add(new JLabel("MODEL"), gbc);
-        gbc.gridy = 10; card.add(comboDevice, gbc);
-
-        txtQuantity = new JTextField("1");
-        txtHours = new JTextField("5.5");
-        txtBudget = new JTextField("500");
-
-        gbc.gridy = 11; card.add(new JLabel("QUANTITY"), gbc);
-        gbc.gridy = 12; card.add(txtQuantity, gbc);
-        gbc.gridy = 13; card.add(new JLabel("DAILY HOURS"), gbc);
-        gbc.gridy = 14; card.add(txtHours, gbc);
-        gbc.gridy = 15; card.add(new JLabel("LIMIT (₹)"), gbc);
-        gbc.gridy = 16; card.add(txtBudget, gbc);
-
-        pnlStatus = new JPanel();
-        pnlStatus.setPreferredSize(new Dimension(280, 5));
-        pnlStatus.setBackground(COLOR_SUCCESS);
-
-        gbc.gridy = 17; card.add(new JLabel("BUDGET CAP"), gbc);
-        gbc.gridy = 18; card.add(pnlStatus, gbc);
-
-        JButton btnPredict = createModernButton("PREDICT BILL", COLOR_ACCENT);
-        btnPredict.addActionListener(e -> calculate());
-        gbc.gridy = 19; card.add(btnPredict, gbc);
-
-        JPanel resPanel = new JPanel(new GridLayout(2,1));
-        resPanel.setBackground(new Color(40,40,45));
-
-        lblResult = new JLabel("₹0.00", SwingConstants.CENTER);
-        lblResult.setFont(new Font("Inter", Font.BOLD, 28));
-        lblResult.setForeground(COLOR_SUCCESS);
-
-        lblCarbon = new JLabel("0.00 kg CO2", SwingConstants.CENTER);
-        lblCarbon.setForeground(Color.GRAY);
-
-        resPanel.add(lblResult);
-        resPanel.add(lblCarbon);
-
-        gbc.gridy = 20; card.add(resPanel, gbc);
-
-        comboCompany.addActionListener(e -> updateDeviceList());
-        btnSearch.addActionListener(e -> filterDevices(txtSearch.getText().trim()));
-        updateDeviceList();
-
-        return card;
+        deviceLibrary.put("Tesla (EV)",tesla);
+        deviceLibrary.put("Samsung",samsung);
+        deviceLibrary.put("Sony",sony);
     }
 
-    private JButton createModernButton(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        btn.setFont(new Font("Inter", Font.BOLD, 12));
-        return btn;
+    private VBox createSidebar(){
+
+        Label title = new Label("POWERGUARD");
+        title.setStyle("-fx-font-size:20px;-fx-text-fill:#2f81f7;");
+
+        Button reset = new Button("RESET ALL");
+        Button export = new Button("EXPORT PDF");
+
+        VBox box = new VBox(20,title,reset,export);
+        box.getStyleClass().add("sidebar");
+        box.setPadding(new Insets(20));
+        box.setPrefWidth(200);
+        reset.setOnAction(e -> {
+            if(chartSeries != null) chartSeries.getData().clear();
+            if(historyTable != null) historyTable.getItems().clear();
+        });
+        return box;
     }
 
-    private void setupChart() {
-        dataset = new DefaultCategoryDataset();
-        JFreeChart chart = ChartFactory.createBarChart(null, null, "Cost (₹)", dataset);
-        chart.setBackgroundPaint(COLOR_BG);
+    private VBox createDashboard(){
 
-        org.jfree.chart.plot.CategoryPlot plot = chart.getCategoryPlot();
-        plot.setBackgroundPaint(COLOR_BG);
-        plot.setOutlineVisible(false); // Borderless look
-        plot.setRangeGridlinePaint(new Color(45, 45, 50));
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
 
-        chartPanel = new ChartPanel(chart);
-        chartPanel.setBackground(COLOR_BG);
+        BarChart<String,Number> chart = new BarChart<>(xAxis,yAxis);
+        chart.setTitle("Usage Analytics Engine");
+
+        chartSeries = new XYChart.Series<>();
+        chart.getData().add(chartSeries);
+        chart.setAnimated(true);
+        chart.setCategoryGap(30);
+        historyTable = new TableView<>();
+
+        TableColumn<PredictionResult,String> deviceCol =
+                new TableColumn<>("DEVICE");
+        deviceCol.setCellValueFactory(data -> data.getValue().deviceProperty());
+
+        TableColumn<PredictionResult,String> costCol =
+                new TableColumn<>("COST");
+        costCol.setCellValueFactory(data -> data.getValue().costProperty());
+
+        TableColumn<PredictionResult,String> carbonCol =
+                new TableColumn<>("CARBON");
+        carbonCol.setCellValueFactory(data -> data.getValue().carbonProperty());
+
+        TableColumn<PredictionResult,String> statusCol =
+                new TableColumn<>("STATUS");
+        statusCol.setCellValueFactory(data -> data.getValue().statusProperty());
+
+        historyTable.getColumns().addAll(
+                deviceCol, costCol, carbonCol, statusCol
+        );
+
+        historyTable.setPrefHeight(300);
+
+        VBox box = new VBox(20, chart, historyTable);
+        box.getStyleClass().add("panel");
+
+        return box;
     }
 
-    private void filterDevices(String query) {
-        // [Existing filter logic remains same]
-        if (query.isEmpty() || query.equals("Search...")) { updateDeviceList(); return; }
-        String lowerQuery = query.toLowerCase().trim();
-        comboDevice.removeAllItems();
-        boolean found = false;
-        for (String company : deviceLibrary.keySet()) {
-            boolean brandMatch = company.toLowerCase().contains(lowerQuery);
-            Map<String, Integer> devices = deviceLibrary.get(company);
-            for (String deviceName : devices.keySet()) {
-                if (brandMatch || deviceName.toLowerCase().contains(lowerQuery)) {
-                    if (!found) { comboCompany.setSelectedItem(company); found = true; }
-                    comboDevice.addItem(deviceName);
-                }
-            }
-        }
+    private VBox createInputPanel(){
+
+        lblModel = new Label("Model: " + modelName);
+        lblR2 = new Label("R²: " + r2);
+        lblRMSE = new Label("RMSE: " + rmse);
+
+        comboCompany = new ComboBox<>();
+        comboCompany.getItems().addAll(deviceLibrary.keySet());
+
+        comboDevice = new ComboBox<>();
+        comboCompany.setOnAction(e -> updateDeviceList());
+
+        txtQuantity = new TextField("1");
+        txtHours = new TextField("5");
+        txtBudget = new TextField("500");
+
+        budgetBar = new ProgressBar(0);   // ✅ moved here
+
+        Button predict = new Button("PREDICT BILL");
+        predict.setPrefWidth(200);
+        predict.setOnAction(e -> calculate());
+
+        lblResult = new Label("₹0");
+        lblResult.setStyle("-fx-font-size:22px;-fx-text-fill:#ff4d4f;");
+
+        lblCarbon = new Label("0 kg CO2");
+
+        VBox panel = new VBox(12,
+                lblModel,
+                lblR2,
+                lblRMSE,
+                new Separator(),
+                new Label("Company"),comboCompany,
+                new Label("Device"),comboDevice,
+                new Label("Quantity"),txtQuantity,
+                new Label("Daily Hours"),txtHours,
+                new Label("Limit (₹)"),txtBudget,
+                budgetBar,
+                predict,
+                lblResult,
+                lblCarbon
+        );
+
+        panel.getStyleClass().add("panel");
+        panel.setPrefWidth(260);
+
+        return panel;
     }
 
     private void updateDeviceList() {
-        comboDevice.removeAllItems();
-        String selected = (String) comboCompany.getSelectedItem();
-        if (selected != null) { deviceLibrary.get(selected).keySet().forEach(comboDevice::addItem); }
+
+        comboDevice.getItems().clear();
+
+        String company = comboCompany.getValue();
+
+        if(company!=null)
+            comboDevice.getItems().addAll(deviceLibrary.get(company).keySet());
     }
 
     private void calculate() {
-        try {
+        if(comboCompany.getValue()==null || comboDevice.getValue()==null){
+            return;
+        }
+        try{
 
-            String company = (String) comboCompany.getSelectedItem();
-            String device = (String) comboDevice.getSelectedItem();
+            String company = comboCompany.getValue();
+            String device = comboDevice.getValue();
+
             int rating = deviceLibrary.get(company).get(device);
 
-            double hours = Double.parseDouble(txtHours.getText());
-            double budgetLimit = Double.parseDouble(txtBudget.getText());
             int quantity = Integer.parseInt(txtQuantity.getText());
+            double hours = Double.parseDouble(txtHours.getText());
 
-            double hourlyKW = (rating / 1000.0) * quantity;
+            double hourlyKW = (rating/1000.0)*quantity;
 
             double predictedUnits = predictor.predictUnits(hourlyKW);
             double totalUnits = predictedUnits * hours;
+
             double cost = KSEBBillCalculator.calculate(totalUnits);
 
             double carbon = totalUnits * 0.85;
 
-            lblResult.setText(String.format("₹%.2f", cost));
-            lblCarbon.setText(String.format("%.2f kg CO2", carbon));
+            lblResult.setText("₹"+String.format("%.2f",cost));
+            lblCarbon.setText(String.format("%.2f kg CO2",carbon));
 
-            boolean over = cost > budgetLimit;
+            int index = chartSeries.getData().size()+1;
 
-            pnlStatus.setBackground(over ? COLOR_DANGER : COLOR_SUCCESS);
-            lblResult.setForeground(over ? COLOR_DANGER : COLOR_SUCCESS);
+            chartSeries.getData().add(
+                    new XYChart.Data<>(device + " ("+index+")",cost)
+            );
 
-            dataset.addValue(cost, "Cost",
-                    device + " (" + (dataset.getColumnCount()+1) + ")");
+            double budget = Double.parseDouble(txtBudget.getText());
 
-            tableModel.addRow(new Object[]{
-                    device,
-                    String.format("₹%.2f", cost),
-                    String.format("%.2f kg", carbon),
-                    over ? "OVER" : "SAFE"
-            });
+            budgetBar.setProgress(cost / budget);
 
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "System Error: " + e.getMessage());
+            if(cost > budget)
+                budgetBar.setStyle("-fx-accent:red;");
+            else
+                budgetBar.setStyle("-fx-accent:green;");
+
+            historyTable.getItems().add(
+                    new PredictionResult(
+                            device,
+                            String.format("₹%.2f",cost),
+                            String.format("%.2f kg",carbon),
+                            cost > budget ? "OVER" : "SAFE"
+                    )
+            );
+
+        }catch(Exception e){
+            System.out.println(e.getMessage());
         }
     }
 
-    private void saveChartImage() {
-        try {
-            JFileChooser fc = new JFileChooser();
-            if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-                ChartUtils.saveChartAsPNG(fc.getSelectedFile(), chartPanel.getChart(), 800, 600);
-            }
-        } catch (Exception e) {}
-    }
 }
