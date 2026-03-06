@@ -239,37 +239,69 @@ public class PowerGuardGUI extends Application {
     }
 
     private void calculate() {
-        if(comboCompany.getValue()==null || comboDevice.getValue()==null){
+        // 1. Validation
+        if(comboCompany.getValue() == null || comboDevice.getValue() == null){
             return;
         }
+
         try {
+            // 2. Gather Inputs
             String company = comboCompany.getValue();
             String device = comboDevice.getValue();
-            int rating = deviceLibrary.get(company).get(device); // Base wattage
+            int rating = deviceLibrary.get(company).get(device); // Base wattage from your library
 
             int quantity = Integer.parseInt(txtQuantity.getText());
             double hours = Double.parseDouble(txtHours.getText());
             double budgetLimit = Double.parseDouble(txtBudget.getText());
+
+            // Calculate hourly KW consumption
             double hourlyKW = (rating / 1000.0) * quantity;
 
-            // Initialize all categories to 0
+            // 3. Map to Model Features (Matches your ARFF headers)
             double fan = 0, fridge = 0, ac = 0, tv = 0, monitor = 0;
+            String deviceName = device.toLowerCase();
 
-            // Map the selected device to the correct feature slot
-            String deviceName = comboDevice.getValue().toLowerCase();
             if (deviceName.contains("ac") || deviceName.contains("connector")) ac = hourlyKW;
             else if (deviceName.contains("refrigerator")) fridge = hourlyKW;
             else if (deviceName.contains("tv") || deviceName.contains("playstation")) tv = hourlyKW;
             else if (deviceName.contains("fan")) fan = hourlyKW;
             else monitor = hourlyKW;
 
-            // Predict using the multi-feature model for high accuracy
-            double predictedUnits = predictor.predictUnits(fan, fridge, ac, tv, monitor);
-            double totalUnits = predictedUnits * hours;
-            double cost = KSEBBillCalculator.calculate(totalUnits);
+            // 4. Get Prediction from RandomForest
+            double predictedUnitsPerDay = predictor.predictUnits(fan, fridge, ac, tv, monitor);
+            double totalUnits = predictedUnitsPerDay * hours;
 
-            // ... (rest of the KSEB calculation logic) ...
-        } catch (Exception e) { e.printStackTrace(); }
+            // 5. Calculate Cost and Carbon
+            double cost = KSEBBillCalculator.calculate(totalUnits);
+            double carbon = totalUnits * 0.85; // Standard carbon footprint estimate
+
+            // 6. UPDATE THE UI (This was the missing part!)
+
+            // Update Labels
+            lblResult.setText(String.format("₹%.2f", cost));
+            lblCarbon.setText(String.format("%.2f kg CO2", carbon));
+
+            // Update Progress Bar
+            double progress = cost / budgetLimit;
+            budgetBar.setProgress(Math.min(progress, 1.0));
+            budgetBar.setStyle(cost > budgetLimit ? "-fx-accent: #ff4d4f;" : "-fx-accent: #52c41a;");
+
+            // Update Analytics Chart
+            chartSeries.getData().add(new XYChart.Data<>(device, cost));
+
+            // Update Table History
+            String status = (cost > budgetLimit) ? "OVER LIMIT" : "SAFE";
+            historyTable.getItems().add(new PredictionResult(
+                    device,
+                    String.format("₹%.2f", cost),
+                    String.format("%.2f kg", carbon),
+                    status
+            ));
+
+        } catch (Exception e) {
+            System.err.println("Calculation Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 }
