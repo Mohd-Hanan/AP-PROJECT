@@ -57,16 +57,17 @@ public class Main extends Application {
                 System.out.println(bestResult);
 
             } else {
-
+                System.out.println("Loading existing trained model...");
                 predictor.loadModel(modelPath);
 
+                // FIX: Instead of hardcoding, get the stats from the loaded model
                 bestResult = new LinearRegressionModel.ModelEvaluationResult(
-                        "LinearRegression",
+                        predictor.getModelName(),
                         0,
+                        predictor.getLastRMSE(),
+                        predictor.getLastR2(),
                         0,
-                        0.52,
-                        0,
-                        2000
+                        0
                 );
             }
 

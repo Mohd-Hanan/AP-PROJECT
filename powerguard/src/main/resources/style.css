@@ -1,42 +1,89 @@
-.root{
-    -fx-background-color:#0f1117;
+/* Global Background and Text */
+.root {
+    -fx-background-color: #0f1117;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
 }
 
-.label{
-    -fx-text-fill:#e6edf3;
-    -fx-font-size:13px;
+.label {
+    -fx-text-fill: #e6edf3;
+    -fx-font-size: 13px;
 }
 
-.button{
-    -fx-background-color:#1f6feb;
-    -fx-text-fill:white;
-    -fx-font-weight:bold;
+/* Modern Buttons */
+.button {
+    -fx-background-color: #1f6feb;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
 }
 
-.button:hover{
-    -fx-background-color:#388bfd;
+.button:hover {
+    -fx-background-color: #388bfd;
 }
 
-.sidebar{
-    -fx-background-color:#161b22;
+/* Sidebar Styling */
+.sidebar {
+    -fx-background-color: #161b22;
+    -fx-border-color: #30363d;
+    -fx-border-width: 0 1 0 0;
 }
 
-.panel{
-    -fx-background-color:#0d1117;
-    -fx-padding:15;
+/* Dashboard Panels */
+.panel {
+    -fx-background-color: #0d1117;
+    -fx-border-color: #30363d;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-border-width: 1;
 }
 
-.chart{
-    -fx-background-color:#0d1117;
+/* --- ADVANCED CHART STYLING --- */
+.chart {
+    -fx-padding: 10;
 }
 
-.table-view{
-    -fx-background-color:#0d1117;
-    -fx-control-inner-background:#0d1117;
-    -fx-text-fill:white;
+.chart-plot-background {
+    -fx-background-color: #0d1117; /* Matches dashboard */
 }
 
-.text-field, .combo-box{
-    -fx-background-color:#161b22;
-    -fx-text-fill:white;
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+    -fx-stroke: #30363d; /* Subtle gridlines like your Swing version */
+}
+
+/* Bar color - matches the orange/coral in your 4th image */
+.default-color0.chart-bar {
+    -fx-bar-fill: #f06431;
+}
+
+.axis {
+    -fx-tick-label-fill: #8b949e;
+}
+
+/* --- TABLE VIEW STYLING --- */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-base: #0d1117;
+    -fx-control-inner-background: #0d1117;
+}
+
+.table-view .column-header {
+    -fx-background-color: #161b22;
+    -fx-text-fill: white;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #121212;
+}
+
+/* --- INPUT FIELDS --- */
+.text-field, .combo-box {
+    -fx-background-color: #161b22;
+    -fx-border-color: #30363d;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #8b949e;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: white;
 }

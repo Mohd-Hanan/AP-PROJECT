@@ -7,13 +7,18 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.geometry.Insets;
-
+import javafx.embed.swing.SwingFXUtils;
+import javax.imageio.ImageIO;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 public class PowerGuardGUI extends Application {
 
     private static LinearRegressionModel predictor;
-
+    private BarChart<String, Number> chart;
     private Map<String, Map<String, Integer>> deviceLibrary = new HashMap<>();
     private ProgressBar budgetBar;
     private ComboBox<String> comboCompany;
@@ -28,7 +33,6 @@ public class PowerGuardGUI extends Application {
     private Label lblRMSE;
     private TableView<PredictionResult> historyTable;
     private XYChart.Series<String, Number> chartSeries;
-
     public PowerGuardGUI() {}
 
     public PowerGuardGUI(LinearRegressionModel predictor) {
@@ -103,6 +107,32 @@ public class PowerGuardGUI extends Application {
         reset.setOnAction(e -> {
             if(chartSeries != null) chartSeries.getData().clear();
             if(historyTable != null) historyTable.getItems().clear();
+
+        });
+        // Inside createSidebar()
+        export.setOnAction(e -> {
+            try {
+                // Capture the chart as an image
+                WritableImage image = chart.snapshot(new SnapshotParameters(), null);
+                File file = new File("usage_report.png");
+
+                // Convert and save
+                javax.imageio.ImageIO.write(
+                        javafx.embed.swing.SwingFXUtils.fromFXImage(image, null),
+                        "png",
+                        file
+                );
+
+                // Show Success Alert
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Export Successful");
+                alert.setHeaderText(null);
+                alert.setContentText("Analytics exported to: " + file.getAbsolutePath());
+                alert.showAndWait();
+
+            } catch (java.io.IOException ex) {
+                ex.printStackTrace();
+            }
         });
         return box;
     }
@@ -112,7 +142,7 @@ public class PowerGuardGUI extends Application {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
 
-        BarChart<String,Number> chart = new BarChart<>(xAxis,yAxis);
+        chart = new BarChart<>(xAxis,yAxis);
         chart.setTitle("Usage Analytics Engine");
 
         chartSeries = new XYChart.Series<>();
@@ -151,9 +181,9 @@ public class PowerGuardGUI extends Application {
 
     private VBox createInputPanel(){
 
-        lblModel = new Label("Model: " + modelName);
-        lblR2 = new Label("R²: " + r2);
-        lblRMSE = new Label("RMSE: " + rmse);
+        lblModel = new Label("Model: " + this.modelName);
+        lblR2 = new Label(String.format("R²: %.4f", this.r2));
+        lblRMSE = new Label(String.format("RMSE: %.4f", this.rmse));
 
         comboCompany = new ComboBox<>();
         comboCompany.getItems().addAll(deviceLibrary.keySet());

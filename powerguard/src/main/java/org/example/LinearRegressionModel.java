@@ -23,7 +23,9 @@ public class LinearRegressionModel {
     private Classifier model;
     private Instances datasetHeader;
     private boolean trainStatus = false;
-
+    private String modelName = "Unknown"; // Add this field
+    private double lastR2 = 0.0;          // Add this field
+    private double lastRMSE = 0.0;
     /* =======================
        Evaluation Result
     ======================== */
@@ -132,6 +134,9 @@ public class LinearRegressionModel {
             throw new IllegalStateException("No valid model selected.");
 
         this.model = bestModel;
+        this.modelName = bestResult.modelName; // Capture the name
+        this.lastR2 = bestResult.r2;           // Capture R2
+        this.lastRMSE = bestResult.rmse;
         this.datasetHeader = new Instances(trainData, 0);
         this.trainStatus = true;
 
@@ -175,19 +180,25 @@ public class LinearRegressionModel {
        Save / Load
     ======================== */
     public void saveModel(String path) throws Exception {
-        Object[] payload = new Object[]{model, datasetHeader};
+        // Save the model, header, name, R2, and RMSE
+        Object[] payload = new Object[]{model, datasetHeader, modelName, lastR2, lastRMSE};
         SerializationHelper.write(path, payload);
     }
 
     public void loadModel(String path) throws Exception {
-
         Object[] payload = (Object[]) SerializationHelper.read(path);
-
         this.model = (Classifier) payload[0];
+        this.datasetHeader = (Instances) payload[1];
 
-        if (payload.length > 1 && payload[1] instanceof Instances)
-            this.datasetHeader = (Instances) payload[1];
-
+        // Load the saved stats if they exist
+        if (payload.length >= 5) {
+            this.modelName = (String) payload[2];
+            this.lastR2 = (Double) payload[3];
+            this.lastRMSE = (Double) payload[4];
+        }
         this.trainStatus = true;
     }
+    public String getModelName() { return modelName; }
+    public double getLastR2() { return lastR2; }
+    public double getLastRMSE() { return lastRMSE; }
 }
