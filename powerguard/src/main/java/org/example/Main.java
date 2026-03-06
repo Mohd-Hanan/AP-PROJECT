@@ -82,6 +82,19 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
+        if (predictor == null) {
+            predictor = new ApplianceModel();
+        }
+        if (finalResult == null) {
+            finalResult = new ApplianceModel.ModelEvaluationResult(
+                    "Unavailable",
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+            );
+        }
 
         PowerGuardGUI gui = new PowerGuardGUI(
                 predictor,
