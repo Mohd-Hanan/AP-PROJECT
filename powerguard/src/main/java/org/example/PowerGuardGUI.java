@@ -2,6 +2,7 @@ package org.example;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.embed.swing.SwingFXUtils;
@@ -45,11 +46,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class PowerGuardGUI extends Application {
@@ -57,19 +54,20 @@ public class PowerGuardGUI extends Application {
     private static final int MAX_QUANTITY = 30;
     private static final double MAX_DAILY_HOURS = 24.0;
     private static final double MAX_BUDGET = 1_000_000;
-    private static final double CHART_EXTREME_FACTOR = 6.0;
 
     private static ApplianceModel predictor;
 
     private final Map<String, Map<String, Integer>> deviceLibrary = new LinkedHashMap<>();
-    private final Map<String, XYChart.Data<String, Number>> chartDataByDevice = new HashMap<>();
-    private final Map<String, Double> actualMonthlyUsageByDevice = new HashMap<>();
+    private final Map<String, XYChart.Data<String, Number>> chartDataByDevice = new LinkedHashMap<>();
 
     private final ObservableList<PredictionResult> predictionRows = FXCollections.observableArrayList();
     private final ObservableList<String> companyItems = FXCollections.observableArrayList();
     private final ObservableList<String> deviceItems = FXCollections.observableArrayList();
 
     private final EnergyUsageService usageService = new EnergyUsageService();
+
+    private Scene mainScene;
+    private String activeThemeStylesheet;
 
     private BarChart<String, Number> usageChart;
     private NumberAxis usageYAxis;
@@ -79,6 +77,7 @@ public class PowerGuardGUI extends Application {
 
     private ComboBox<String> comboCompany;
     private ComboBox<String> comboDevice;
+    private ComboBox<String> comboTheme;
 
     private TextField txtHours;
     private TextField txtQuantity;
@@ -117,19 +116,28 @@ public class PowerGuardGUI extends Application {
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(16));
-        root.setLeft(createSidebar());
-        root.setCenter(createDashboard());
-        root.setRight(createInputPanel());
-        BorderPane.setMargin(root.getCenter(), new Insets(0, 12, 0, 12));
 
-        Scene scene = new Scene(root, 1320, 820);
-        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        VBox sidebar = createSidebar();
+        VBox dashboard = createDashboard();
+        VBox inputPanel = createInputPanel();
+
+        root.setLeft(sidebar);
+        root.setCenter(dashboard);
+        root.setRight(inputPanel);
+
+        BorderPane.setMargin(dashboard, new Insets(0, 12, 0, 12));
+
+        mainScene = new Scene(root, 1320, 820);
+        mainScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        applyTheme("Dark Theme");
 
         stage.setTitle("PowerGuard AI Energy Predictor");
         stage.setMinWidth(1150);
         stage.setMinHeight(760);
-        stage.setScene(scene);
+        stage.setScene(mainScene);
         stage.show();
+
+        refreshUsageChartFromTable();
     }
 
     private void initializeData() {
@@ -258,6 +266,15 @@ public class PowerGuardGUI extends Application {
         Label subtitle = new Label("AI Energy Predictor");
         subtitle.getStyleClass().add("sidebar-subtitle");
 
+        Label themeLabel = new Label("Theme");
+        themeLabel.getStyleClass().add("field-label");
+
+        comboTheme = new ComboBox<>();
+        comboTheme.getItems().addAll("Dark Theme", "Light Theme", "Blue Analytics Theme");
+        comboTheme.getSelectionModel().select("Dark Theme");
+        comboTheme.setMaxWidth(Double.MAX_VALUE);
+        comboTheme.setOnAction(e -> applyTheme(comboTheme.getValue()));
+
         Button reset = new Button("RESET ALL");
         Button export = new Button("EXPORT PDF");
         reset.getStyleClass().addAll("primary-button", "button-wide");
@@ -269,11 +286,12 @@ public class PowerGuardGUI extends Application {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        VBox box = new VBox(12, title, subtitle, new Separator(), reset, export, spacer);
+        VBox box = new VBox(12, title, subtitle, new Separator(), themeLabel, comboTheme, reset, export, spacer);
         box.getStyleClass().add("sidebar");
         box.setPadding(new Insets(20));
-        box.setPrefWidth(215);
-        box.setMinWidth(200);
+        box.setPrefWidth(235);
+        box.setMinWidth(220);
+        VBox.setVgrow(box, Priority.ALWAYS);
         return box;
     }
 
@@ -281,17 +299,19 @@ public class PowerGuardGUI extends Application {
         CategoryAxis xAxis = new CategoryAxis();
         xAxis.setLabel("Device");
 
-        usageYAxis = new NumberAxis(0, 10, 2);
-        usageYAxis.setLabel("Monthly Usage (kWh)");
-        usageYAxis.setAutoRanging(false);
+        usageYAxis = new NumberAxis();
+        usageYAxis.setLabel("Monthly kWh");
+        usageYAxis.setAutoRanging(true);
+        usageYAxis.setForceZeroInRange(true);
 
         usageChart = new BarChart<>(xAxis, usageYAxis);
         usageChart.setTitle("Monthly Energy Usage by Device");
         usageChart.setLegendVisible(false);
-        usageChart.setAnimated(false);
-        usageChart.setCategoryGap(20);
+        usageChart.setAnimated(true);
+        usageChart.setCategoryGap(16);
         usageChart.setBarGap(6);
         usageChart.setMinHeight(320);
+        usageChart.setPrefHeight(420);
 
         chartSeries = new XYChart.Series<>();
         usageChart.getData().add(chartSeries);
@@ -324,12 +344,15 @@ public class PowerGuardGUI extends Application {
 
         historyTable.getColumns().addAll(deviceCol, qtyCol, hoursCol, unitsCol, costCol, carbonCol, statusCol);
 
+        predictionRows.addListener((ListChangeListener<PredictionResult>) change -> refreshUsageChartFromTable());
+
         VBox.setVgrow(usageChart, Priority.ALWAYS);
         VBox.setVgrow(historyTable, Priority.ALWAYS);
 
         VBox box = new VBox(12, usageChart, historyTable);
         box.getStyleClass().add("panel");
         box.setPadding(new Insets(14));
+        box.setFillWidth(true);
         return box;
     }
 
@@ -406,8 +429,9 @@ public class PowerGuardGUI extends Application {
         panel.getStyleClass().add("panel");
         panel.getStyleClass().add("input-panel");
         panel.setPadding(new Insets(14));
-        panel.setPrefWidth(330);
-        panel.setMinWidth(300);
+        panel.setPrefWidth(340);
+        panel.setMinWidth(310);
+        panel.setMaxWidth(420);
         return panel;
     }
 
@@ -463,6 +487,27 @@ public class PowerGuardGUI extends Application {
         });
     }
 
+    private void applyTheme(String selectedTheme) {
+        if (mainScene == null || selectedTheme == null) {
+            return;
+        }
+
+        String stylesheet;
+        if ("Light Theme".equals(selectedTheme)) {
+            stylesheet = getClass().getResource("/light-theme.css").toExternalForm();
+        } else if ("Blue Analytics Theme".equals(selectedTheme)) {
+            stylesheet = getClass().getResource("/blue-theme.css").toExternalForm();
+        } else {
+            stylesheet = getClass().getResource("/dark-theme.css").toExternalForm();
+        }
+
+        if (activeThemeStylesheet != null) {
+            mainScene.getStylesheets().remove(activeThemeStylesheet);
+        }
+        mainScene.getStylesheets().add(stylesheet);
+        activeThemeStylesheet = stylesheet;
+    }
+
     private void updateDeviceList() {
         comboDevice.getSelectionModel().clearSelection();
         comboDevice.getEditor().clear();
@@ -501,7 +546,6 @@ public class PowerGuardGUI extends Application {
             );
 
             updateResultPanel(metrics, budgetLimit);
-            updateUsageChart(device, metrics.adjustedUnits());
             updateHistoryTable(device, quantity, hours, budgetLimit, metrics);
 
         } catch (IllegalArgumentException ex) {
@@ -524,61 +568,48 @@ public class PowerGuardGUI extends Application {
         budgetBar.getStyleClass().add(cost > budgetLimit ? "budget-over" : "budget-safe");
     }
 
-    private void updateUsageChart(String device, double unitsToAdd) {
-        double actualUnits = actualMonthlyUsageByDevice.getOrDefault(device, 0.0) + unitsToAdd;
-        actualMonthlyUsageByDevice.put(device, actualUnits);
-
-        XYChart.Data<String, Number> data = chartDataByDevice.get(device);
-        if (data == null) {
-            data = new XYChart.Data<>(device, actualUnits);
-            chartDataByDevice.put(device, data);
-            chartSeries.getData().add(data);
+    private void refreshUsageChartFromTable() {
+        Map<String, Double> aggregatedUsage = new LinkedHashMap<>();
+        for (PredictionResult row : predictionRows) {
+            String device = row.deviceProperty().get();
+            double units = parseUnits(row.unitsProperty().get());
+            aggregatedUsage.merge(device, units, Double::sum);
         }
 
-        applyChartScalingAndTooltips();
-    }
+        chartDataByDevice.keySet().removeIf(device -> !aggregatedUsage.containsKey(device));
+        chartSeries.getData().removeIf(data -> !aggregatedUsage.containsKey(data.getXValue()));
 
-    private void applyChartScalingAndTooltips() {
-        if (actualMonthlyUsageByDevice.isEmpty()) {
-            usageYAxis.setLowerBound(0);
-            usageYAxis.setUpperBound(10);
-            usageYAxis.setTickUnit(2);
-            return;
-        }
-
-        List<Double> values = new ArrayList<>(actualMonthlyUsageByDevice.values());
-        values.sort(Comparator.naturalOrder());
-
-        double max = values.get(values.size() - 1);
-        double median = values.get(values.size() / 2);
-        double displayCap = max;
-
-        if (median > 0 && max > median * CHART_EXTREME_FACTOR) {
-            displayCap = median * CHART_EXTREME_FACTOR;
-        }
-
-        double upperBound = roundAxisUpper(Math.max(displayCap, 5));
-        usageYAxis.setLowerBound(0);
-        usageYAxis.setUpperBound(upperBound);
-        usageYAxis.setTickUnit(Math.max(1, upperBound / 8));
-
-        for (Map.Entry<String, Double> entry : actualMonthlyUsageByDevice.entrySet()) {
+        for (Map.Entry<String, Double> entry : aggregatedUsage.entrySet()) {
             String device = entry.getKey();
-            double actual = entry.getValue();
-            double plotted = Math.min(actual, displayCap);
+            double value = entry.getValue();
 
             XYChart.Data<String, Number> point = chartDataByDevice.get(device);
-            if (point != null) {
-                point.setYValue(plotted);
-                String suffix = actual > displayCap ? String.format(" (axis-capped at %.2f)", plotted) : "";
-                attachTooltip(point, String.format("%s\nMonthly kWh: %.2f%s", device, actual, suffix));
+            if (point == null) {
+                point = new XYChart.Data<>(device, value);
+                chartDataByDevice.put(device, point);
+                chartSeries.getData().add(point);
+            } else {
+                point.setYValue(value);
             }
+            attachTooltip(point, String.format("%s\nMonthly kWh: %.2f", device, value));
         }
+
+        usageYAxis.setAutoRanging(true);
     }
 
-    private double roundAxisUpper(double value) {
-        double power = Math.pow(10, Math.floor(Math.log10(value)));
-        return Math.ceil(value / power) * power;
+    private double parseUnits(String unitsText) {
+        if (unitsText == null || unitsText.isBlank()) {
+            return 0;
+        }
+        String normalized = unitsText.replaceAll("[^0-9.]", "");
+        if (normalized.isBlank()) {
+            return 0;
+        }
+        try {
+            return Double.parseDouble(normalized);
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
     }
 
     private void attachTooltip(XYChart.Data<String, Number> data, String text) {
@@ -615,10 +646,9 @@ public class PowerGuardGUI extends Application {
     }
 
     private void resetAll() {
-        chartSeries.getData().clear();
-        chartDataByDevice.clear();
-        actualMonthlyUsageByDevice.clear();
         predictionRows.clear();
+        chartDataByDevice.clear();
+        chartSeries.getData().clear();
 
         comboCompany.getSelectionModel().clearSelection();
         comboCompany.getEditor().clear();
@@ -637,9 +667,7 @@ public class PowerGuardGUI extends Application {
         budgetBar.setProgress(0);
         budgetBar.getStyleClass().removeAll("budget-safe", "budget-over");
 
-        usageYAxis.setLowerBound(0);
-        usageYAxis.setUpperBound(10);
-        usageYAxis.setTickUnit(2);
+        refreshUsageChartFromTable();
     }
 
     private void exportPdfReport(Window ownerWindow) {

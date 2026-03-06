@@ -1,0 +1,119 @@
+.root {
+    -fx-background-color: #0f1117;
+}
+
+.label {
+    -fx-text-fill: #e6edf3;
+}
+
+.sidebar {
+    -fx-background-color: linear-gradient(to bottom, #1a2230, #121a26);
+    -fx-border-color: #2f3c4d;
+}
+
+.sidebar-title {
+    -fx-text-fill: #8db9ff;
+}
+
+.sidebar-subtitle {
+    -fx-text-fill: #9cb3cc;
+}
+
+.panel {
+    -fx-background-color: #141c27;
+    -fx-border-color: #2f3c4d;
+}
+
+.field-label {
+    -fx-text-fill: #b7c7d9;
+}
+
+.text-field,
+.combo-box {
+    -fx-background-color: #1b2534;
+    -fx-border-color: #3a4a60;
+    -fx-text-fill: #e6edf3;
+    -fx-prompt-text-fill: #9db0c5;
+}
+
+.combo-box .list-cell,
+.combo-box .text-field {
+    -fx-text-fill: #e6edf3;
+}
+
+.primary-button {
+    -fx-background-color: #2f81f7;
+    -fx-text-fill: #ffffff;
+}
+
+.primary-button:hover {
+    -fx-background-color: #4b91f3;
+}
+
+.ghost-button {
+    -fx-background-color: #223047;
+    -fx-text-fill: #d9e6f6;
+}
+
+.ghost-button:hover {
+    -fx-background-color: #2a3c57;
+}
+
+.result-value {
+    -fx-text-fill: #73b0ff;
+}
+
+.chart-title {
+    -fx-text-fill: #d8e7f7;
+}
+
+.chart-plot-background {
+    -fx-background-color: #111926;
+    -fx-border-color: #2f3c4d;
+}
+
+.chart-vertical-grid-lines,
+.chart-horizontal-grid-lines {
+    -fx-stroke: #304055;
+}
+
+.axis {
+    -fx-tick-label-fill: #b5c9df;
+}
+
+.axis-label {
+    -fx-text-fill: #d4e4f7;
+}
+
+.default-color0.chart-bar {
+    -fx-bar-fill: linear-gradient(to top, #2f80ed, #56ccf2);
+}
+
+.table-view {
+    -fx-background-color: #141c27;
+    -fx-border-color: #2f3c4d;
+}
+
+.table-view .column-header-background,
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: #1f2a3a;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #e5eef8;
+    -fx-font-weight: 700;
+}
+
+.table-row-cell {
+    -fx-background-color: #151f2d;
+    -fx-border-color: transparent transparent #253243 transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #172233;
+}
+
+.progress-bar {
+    -fx-accent: #2e7d32;
+}
