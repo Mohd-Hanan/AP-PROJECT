@@ -3,7 +3,8 @@ package org.example;
 public class EnergyUsageService {
 
     private static final int DAYS_PER_MONTH = 30;
-    private static final double CO2_KG_PER_KWH = 0.82;
+    // Typical grid emission factor used for India-scale estimate (kg CO2 per kWh).
+    private static final double CO2_KG_PER_KWH = 0.708;
     private static final double MODEL_UNITS_BASELINE = 4533.84;
     private static final double MIN_MODEL_FACTOR = 0.70;
     private static final double MAX_MODEL_FACTOR = 1.30;

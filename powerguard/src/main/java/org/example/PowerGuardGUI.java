@@ -3,6 +3,8 @@ package org.example;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -27,28 +29,50 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.Window;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
-import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PowerGuardGUI extends Application {
 
+    private static final int MAX_QUANTITY = 30;
+    private static final double MAX_DAILY_HOURS = 24.0;
+    private static final double MAX_BUDGET = 1_000_000;
+    private static final double CHART_EXTREME_FACTOR = 6.0;
+
     private static ApplianceModel predictor;
 
-    private final Map<String, Map<String, Integer>> deviceLibrary = new HashMap<>();
+    private final Map<String, Map<String, Integer>> deviceLibrary = new LinkedHashMap<>();
     private final Map<String, XYChart.Data<String, Number>> chartDataByDevice = new HashMap<>();
+    private final Map<String, Double> actualMonthlyUsageByDevice = new HashMap<>();
 
     private final ObservableList<PredictionResult> predictionRows = FXCollections.observableArrayList();
+    private final ObservableList<String> companyItems = FXCollections.observableArrayList();
+    private final ObservableList<String> deviceItems = FXCollections.observableArrayList();
 
     private final EnergyUsageService usageService = new EnergyUsageService();
 
     private BarChart<String, Number> usageChart;
+    private NumberAxis usageYAxis;
     private XYChart.Series<String, Number> chartSeries;
 
     private ProgressBar budgetBar;
@@ -109,20 +133,122 @@ public class PowerGuardGUI extends Application {
     }
 
     private void initializeData() {
-        Map<String, Integer> samsung = new HashMap<>();
-        samsung.put("Smart Refrigerator", 400);
-        samsung.put("Inverter AC", 1500);
+        deviceLibrary.clear();
 
-        Map<String, Integer> sony = new HashMap<>();
-        sony.put("PlayStation 5", 200);
-        sony.put("Bravia TV", 180);
+        addCompany("Samsung", Map.ofEntries(
+                Map.entry("Inverter AC (1.5 Ton)", 1500),
+                Map.entry("Double Door Refrigerator", 280),
+                Map.entry("Front Load Washing Machine", 500),
+                Map.entry("LED TV 55\"", 120),
+                Map.entry("Microwave Oven", 1200),
+                Map.entry("Ceiling Fan", 75)
+        ));
 
-        Map<String, Integer> tesla = new HashMap<>();
-        tesla.put("Wall Connector (11.5kW)", 11500);
+        addCompany("LG", Map.ofEntries(
+                Map.entry("Dual Inverter AC", 1450),
+                Map.entry("Smart Refrigerator", 300),
+                Map.entry("Top Load Washing Machine", 450),
+                Map.entry("OLED TV", 140),
+                Map.entry("Water Purifier", 60),
+                Map.entry("Air Purifier", 55)
+        ));
 
-        deviceLibrary.put("Tesla (EV)", tesla);
-        deviceLibrary.put("Samsung", samsung);
-        deviceLibrary.put("Sony", sony);
+        addCompany("Sony", Map.ofEntries(
+                Map.entry("Bravia TV", 160),
+                Map.entry("PlayStation 5", 200),
+                Map.entry("Home Theater", 320),
+                Map.entry("Sound Bar", 100)
+        ));
+
+        addCompany("Panasonic", Map.ofEntries(
+                Map.entry("Split AC", 1550),
+                Map.entry("Refrigerator", 260),
+                Map.entry("Microwave", 1300),
+                Map.entry("Induction Cooktop", 1800),
+                Map.entry("Ceiling Fan", 70)
+        ));
+
+        addCompany("Whirlpool", Map.ofEntries(
+                Map.entry("Refrigerator", 300),
+                Map.entry("Washing Machine", 500),
+                Map.entry("Air Conditioner", 1500),
+                Map.entry("Water Heater", 2000)
+        ));
+
+        addCompany("Godrej", Map.ofEntries(
+                Map.entry("Refrigerator", 250),
+                Map.entry("Chest Freezer", 320),
+                Map.entry("Washing Machine", 480),
+                Map.entry("Air Conditioner", 1400)
+        ));
+
+        addCompany("Haier", Map.ofEntries(
+                Map.entry("Inverter AC", 1450),
+                Map.entry("Refrigerator", 280),
+                Map.entry("Washing Machine", 460),
+                Map.entry("LED TV", 110)
+        ));
+
+        addCompany("Bosch", Map.ofEntries(
+                Map.entry("Dishwasher", 1300),
+                Map.entry("Washing Machine", 520),
+                Map.entry("Dryer", 1800),
+                Map.entry("Built-in Oven", 2400)
+        ));
+
+        addCompany("Dell", Map.ofEntries(
+                Map.entry("Laptop", 65),
+                Map.entry("Desktop", 250),
+                Map.entry("24-inch Monitor", 35),
+                Map.entry("Wi-Fi Router", 12)
+        ));
+
+        addCompany("HP", Map.ofEntries(
+                Map.entry("Laptop", 70),
+                Map.entry("Desktop", 230),
+                Map.entry("Laser Printer", 400),
+                Map.entry("Monitor", 32)
+        ));
+
+        addCompany("Apple", Map.ofEntries(
+                Map.entry("MacBook Pro", 96),
+                Map.entry("iMac", 185),
+                Map.entry("Apple TV", 6),
+                Map.entry("HomePod", 8)
+        ));
+
+        addCompany("Philips", Map.ofEntries(
+                Map.entry("LED Bulb 9W", 9),
+                Map.entry("Tube Light", 20),
+                Map.entry("Air Fryer", 1400),
+                Map.entry("Room Heater", 2000),
+                Map.entry("Induction Cooktop", 1800)
+        ));
+
+        addCompany("Havells", Map.ofEntries(
+                Map.entry("Ceiling Fan", 70),
+                Map.entry("Water Pump", 750),
+                Map.entry("Room Heater", 2000),
+                Map.entry("LED Batten", 18)
+        ));
+
+        addCompany("Bajaj", Map.ofEntries(
+                Map.entry("Ceiling Fan", 75),
+                Map.entry("Water Heater", 2000),
+                Map.entry("Mixer Grinder", 750),
+                Map.entry("Microwave", 1100)
+        ));
+
+        addCompany("Tesla (EV)", Map.ofEntries(
+                Map.entry("Wall Connector (11.5kW)", 11500),
+                Map.entry("Portable EV Charger", 3500)
+        ));
+
+        companyItems.setAll(deviceLibrary.keySet());
+    }
+
+    private void addCompany(String companyName, Map<String, Integer> appliances) {
+        deviceLibrary.put(companyName, new LinkedHashMap<>(appliances));
     }
 
     private VBox createSidebar() {
@@ -138,7 +264,7 @@ public class PowerGuardGUI extends Application {
         export.getStyleClass().addAll("ghost-button", "button-wide");
 
         reset.setOnAction(e -> resetAll());
-        export.setOnAction(e -> exportChartSnapshot());
+        export.setOnAction(e -> exportPdfReport(export.getScene().getWindow()));
 
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
@@ -155,15 +281,17 @@ public class PowerGuardGUI extends Application {
         CategoryAxis xAxis = new CategoryAxis();
         xAxis.setLabel("Device");
 
-        NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel("Monthly Usage (kWh)");
+        usageYAxis = new NumberAxis(0, 10, 2);
+        usageYAxis.setLabel("Monthly Usage (kWh)");
+        usageYAxis.setAutoRanging(false);
 
-        usageChart = new BarChart<>(xAxis, yAxis);
+        usageChart = new BarChart<>(xAxis, usageYAxis);
         usageChart.setTitle("Monthly Energy Usage by Device");
         usageChart.setLegendVisible(false);
         usageChart.setAnimated(false);
-        usageChart.setCategoryGap(24);
+        usageChart.setCategoryGap(20);
         usageChart.setBarGap(6);
+        usageChart.setMinHeight(320);
 
         chartSeries = new XYChart.Series<>();
         usageChart.getData().add(chartSeries);
@@ -213,12 +341,17 @@ public class PowerGuardGUI extends Application {
         lblRMSE = new Label(String.format("RMSE: %.4f", this.rmse));
 
         comboCompany = new ComboBox<>();
-        comboCompany.getItems().addAll(deviceLibrary.keySet());
         comboCompany.setPrefWidth(Double.MAX_VALUE);
+        setupSearchableComboBox(comboCompany, companyItems);
 
         comboDevice = new ComboBox<>();
         comboDevice.setPrefWidth(Double.MAX_VALUE);
-        comboCompany.setOnAction(e -> updateDeviceList());
+        setupSearchableComboBox(comboDevice, deviceItems);
+
+        comboCompany.setOnAction(e -> {
+            updateDeviceList();
+            comboCompany.getEditor().setText(comboCompany.getValue() == null ? "" : comboCompany.getValue());
+        });
 
         txtQuantity = new TextField("1");
         txtHours = new TextField("5");
@@ -286,15 +419,64 @@ public class PowerGuardGUI extends Application {
         grid.add(inputControl, 1, row);
     }
 
+    private void setupSearchableComboBox(ComboBox<String> comboBox, ObservableList<String> sourceItems) {
+        comboBox.setEditable(true);
+        FilteredList<String> filteredItems = new FilteredList<>(sourceItems, item -> true);
+        comboBox.setItems(filteredItems);
+
+        comboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (!comboBox.isFocused()) {
+                return;
+            }
+            String normalized = newText == null ? "" : newText.trim().toLowerCase();
+            filteredItems.setPredicate(item -> item.toLowerCase().contains(normalized));
+            if (!comboBox.isShowing()) {
+                comboBox.show();
+            }
+        });
+
+        comboBox.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (isFocused) {
+                return;
+            }
+            String typed = comboBox.getEditor().getText() == null ? "" : comboBox.getEditor().getText().trim();
+            if (typed.isEmpty()) {
+                comboBox.getSelectionModel().clearSelection();
+                filteredItems.setPredicate(item -> true);
+                return;
+            }
+
+            String match = sourceItems.stream()
+                    .filter(item -> item.equalsIgnoreCase(typed))
+                    .findFirst()
+                    .orElse(null);
+
+            if (match != null) {
+                comboBox.getSelectionModel().select(match);
+                comboBox.getEditor().setText(match);
+            } else if (comboBox.getValue() != null) {
+                comboBox.getEditor().setText(comboBox.getValue());
+            } else {
+                comboBox.getEditor().clear();
+            }
+            filteredItems.setPredicate(item -> true);
+        });
+    }
+
     private void updateDeviceList() {
-        comboDevice.getItems().clear();
+        comboDevice.getSelectionModel().clearSelection();
+        comboDevice.getEditor().clear();
+
         String company = comboCompany.getValue();
-        if (company == null) {
+        if (company == null || !deviceLibrary.containsKey(company)) {
+            deviceItems.clear();
             return;
         }
-        comboDevice.getItems().addAll(deviceLibrary.get(company).keySet());
-        if (!comboDevice.getItems().isEmpty()) {
+
+        deviceItems.setAll(deviceLibrary.get(company).keySet());
+        if (!deviceItems.isEmpty()) {
             comboDevice.getSelectionModel().selectFirst();
+            comboDevice.getEditor().setText(comboDevice.getValue());
         }
     }
 
@@ -306,9 +488,9 @@ public class PowerGuardGUI extends Application {
             String device = comboDevice.getValue();
 
             int rating = deviceLibrary.get(company).get(device);
-            int quantity = parsePositiveInt(txtQuantity.getText(), "Quantity");
+            int quantity = parseQuantity(txtQuantity.getText());
             double hours = parseHours(txtHours.getText());
-            double budgetLimit = parsePositiveDouble(txtBudget.getText(), "Budget");
+            double budgetLimit = parseBudget(txtBudget.getText());
 
             EnergyUsageService.PredictionMetrics metrics = usageService.calculate(
                     device,
@@ -343,17 +525,60 @@ public class PowerGuardGUI extends Application {
     }
 
     private void updateUsageChart(String device, double unitsToAdd) {
+        double actualUnits = actualMonthlyUsageByDevice.getOrDefault(device, 0.0) + unitsToAdd;
+        actualMonthlyUsageByDevice.put(device, actualUnits);
+
         XYChart.Data<String, Number> data = chartDataByDevice.get(device);
         if (data == null) {
-            data = new XYChart.Data<>(device, unitsToAdd);
+            data = new XYChart.Data<>(device, actualUnits);
             chartDataByDevice.put(device, data);
             chartSeries.getData().add(data);
-            attachTooltip(data, String.format("%s: %.2f kWh", device, unitsToAdd));
-        } else {
-            double updated = data.getYValue().doubleValue() + unitsToAdd;
-            data.setYValue(updated);
-            attachTooltip(data, String.format("%s: %.2f kWh", device, updated));
         }
+
+        applyChartScalingAndTooltips();
+    }
+
+    private void applyChartScalingAndTooltips() {
+        if (actualMonthlyUsageByDevice.isEmpty()) {
+            usageYAxis.setLowerBound(0);
+            usageYAxis.setUpperBound(10);
+            usageYAxis.setTickUnit(2);
+            return;
+        }
+
+        List<Double> values = new ArrayList<>(actualMonthlyUsageByDevice.values());
+        values.sort(Comparator.naturalOrder());
+
+        double max = values.get(values.size() - 1);
+        double median = values.get(values.size() / 2);
+        double displayCap = max;
+
+        if (median > 0 && max > median * CHART_EXTREME_FACTOR) {
+            displayCap = median * CHART_EXTREME_FACTOR;
+        }
+
+        double upperBound = roundAxisUpper(Math.max(displayCap, 5));
+        usageYAxis.setLowerBound(0);
+        usageYAxis.setUpperBound(upperBound);
+        usageYAxis.setTickUnit(Math.max(1, upperBound / 8));
+
+        for (Map.Entry<String, Double> entry : actualMonthlyUsageByDevice.entrySet()) {
+            String device = entry.getKey();
+            double actual = entry.getValue();
+            double plotted = Math.min(actual, displayCap);
+
+            XYChart.Data<String, Number> point = chartDataByDevice.get(device);
+            if (point != null) {
+                point.setYValue(plotted);
+                String suffix = actual > displayCap ? String.format(" (axis-capped at %.2f)", plotted) : "";
+                attachTooltip(point, String.format("%s\nMonthly kWh: %.2f%s", device, actual, suffix));
+            }
+        }
+    }
+
+    private double roundAxisUpper(double value) {
+        double power = Math.pow(10, Math.floor(Math.log10(value)));
+        return Math.ceil(value / power) * power;
     }
 
     private void attachTooltip(XYChart.Data<String, Number> data, String text) {
@@ -392,10 +617,14 @@ public class PowerGuardGUI extends Application {
     private void resetAll() {
         chartSeries.getData().clear();
         chartDataByDevice.clear();
+        actualMonthlyUsageByDevice.clear();
         predictionRows.clear();
 
         comboCompany.getSelectionModel().clearSelection();
-        comboDevice.getItems().clear();
+        comboCompany.getEditor().clear();
+        comboDevice.getSelectionModel().clearSelection();
+        comboDevice.getEditor().clear();
+        deviceItems.clear();
 
         txtQuantity.setText("1");
         txtHours.setText("5");
@@ -407,27 +636,98 @@ public class PowerGuardGUI extends Application {
 
         budgetBar.setProgress(0);
         budgetBar.getStyleClass().removeAll("budget-safe", "budget-over");
+
+        usageYAxis.setLowerBound(0);
+        usageYAxis.setUpperBound(10);
+        usageYAxis.setTickUnit(2);
     }
 
-    private void exportChartSnapshot() {
+    private void exportPdfReport(Window ownerWindow) {
         try {
-            WritableImage image = usageChart.snapshot(new SnapshotParameters(), null);
-            String ts = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
-            File file = new File("usage_report_" + ts + ".png");
-            ImageIO.write(javafx.embed.swing.SwingFXUtils.fromFXImage(image, null), "png", file);
-            showInfo("Analytics exported to: " + file.getAbsolutePath());
-        } catch (IOException ex) {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Export Usage Report as PDF");
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+            chooser.setInitialFileName("powerguard_usage_report.pdf");
+
+            File selectedFile = chooser.showSaveDialog(ownerWindow);
+            if (selectedFile == null) {
+                return;
+            }
+
+            if (!selectedFile.getName().toLowerCase().endsWith(".pdf")) {
+                selectedFile = new File(selectedFile.getAbsolutePath() + ".pdf");
+            }
+
+            WritableImage snapshot = usageChart.snapshot(new SnapshotParameters(), null);
+            BufferedImage chartImage = SwingFXUtils.fromFXImage(snapshot, null);
+            writePdfReport(selectedFile, chartImage);
+
+            showInfo("Analytics exported to: " + selectedFile.getAbsolutePath());
+        } catch (Exception ex) {
             showWarning("Export failed: " + ex.getMessage());
         }
     }
 
+    private void writePdfReport(File file, BufferedImage chartImage) throws IOException {
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+
+            float margin = 36;
+            float pageWidth = page.getMediaBox().getWidth();
+            float pageHeight = page.getMediaBox().getHeight();
+            float availableWidth = pageWidth - (2 * margin);
+
+            PDImageXObject pdfImage = LosslessFactory.createFromImage(document, chartImage);
+
+            float imageWidth = availableWidth;
+            float imageHeight = (chartImage.getHeight() * imageWidth) / chartImage.getWidth();
+            imageHeight = Math.min(imageHeight, pageHeight - 180);
+
+            try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+                content.beginText();
+                content.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                content.newLineAtOffset(margin, pageHeight - 50);
+                content.showText("PowerGuard AI Energy Predictor - Usage Report");
+                content.endText();
+
+                content.beginText();
+                content.setFont(PDType1Font.HELVETICA, 10);
+                content.newLineAtOffset(margin, pageHeight - 68);
+                content.showText("Generated: " + DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now()));
+                content.endText();
+
+                float imageY = pageHeight - 90 - imageHeight;
+                content.drawImage(pdfImage, margin, imageY, imageWidth, imageHeight);
+            }
+
+            document.save(file);
+        }
+    }
+
     private void validateSelection() {
-        if (comboCompany.getValue() == null) {
-            throw new IllegalArgumentException("Select a company.");
+        if (comboCompany.getValue() == null || !deviceLibrary.containsKey(comboCompany.getValue())) {
+            throw new IllegalArgumentException("Select a valid company.");
         }
-        if (comboDevice.getValue() == null) {
-            throw new IllegalArgumentException("Select a device.");
+        if (comboDevice.getValue() == null || !deviceLibrary.get(comboCompany.getValue()).containsKey(comboDevice.getValue())) {
+            throw new IllegalArgumentException("Select a valid device.");
         }
+    }
+
+    private int parseQuantity(String value) {
+        int quantity = parsePositiveInt(value, "Quantity");
+        if (quantity > MAX_QUANTITY) {
+            throw new IllegalArgumentException("Quantity is too high. Allowed range: 1 to " + MAX_QUANTITY + ".");
+        }
+        return quantity;
+    }
+
+    private double parseBudget(String value) {
+        double budget = parsePositiveDouble(value, "Budget");
+        if (budget > MAX_BUDGET) {
+            throw new IllegalArgumentException("Budget is too high. Enter a value up to " + (int) MAX_BUDGET + ".");
+        }
+        return budget;
     }
 
     private int parsePositiveInt(String value, String field) {
@@ -456,7 +756,7 @@ public class PowerGuardGUI extends Application {
 
     private double parseHours(String value) {
         double hours = parsePositiveDouble(value, "Daily Hours");
-        if (hours > 24) {
+        if (hours > MAX_DAILY_HOURS) {
             throw new IllegalArgumentException("Daily Hours must be between 0 and 24.");
         }
         return hours;
