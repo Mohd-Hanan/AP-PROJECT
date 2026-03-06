@@ -7,25 +7,25 @@ import java.io.File;
 
 public class Main extends Application {
 
-    private static LinearRegressionModel predictor;
-    private static LinearRegressionModel.ModelEvaluationResult finalResult;
+    private static ApplianceModel predictor;
+    private static ApplianceModel.ModelEvaluationResult finalResult;
 
     public static void main(String[] args) {
+        System.err.close();
+        System.setErr(System.out);
 
-        String arffPath = "target/final_electricity_dataset.arff";
-        String modelPath = "target/power_model.model";
-        File targetDir = new File("target");
+        java.util.logging.Logger.getLogger("com.github.fommil").setLevel(java.util.logging.Level.OFF);
+        java.util.logging.LogManager.getLogManager().reset();
 
-        if (!targetDir.exists()) {
-            targetDir.mkdirs();
-        }
+        String arffPath = "target/appliance_dataset.arff";
+        String modelPath = "target/appliance_model.model";
 
         String csvPath = Main.class
                 .getClassLoader()
                 .getResource("data/final_electricity_dataset.csv")
                 .getPath();
 
-        predictor = new LinearRegressionModel();
+        predictor = new ApplianceModel();
 
         try {
 
@@ -36,7 +36,7 @@ public class Main extends Application {
                 throw new IllegalStateException("Dataset not found at: " + csvPath);
             }
 
-            LinearRegressionModel.ModelEvaluationResult bestResult;
+            ApplianceModel.ModelEvaluationResult bestResult;
 
             boolean retrainNeeded =
                     !modelFile.exists() ||
@@ -45,7 +45,7 @@ public class Main extends Application {
             if (retrainNeeded) {
 
                 System.out.println("Step 1/3 - Preprocessing CSV...");
-                DataHandler.convertCSVtoARFF(csvPath, arffPath);
+                DataHandler.convertCSVtoApplianceARFF(csvPath, arffPath);
 
                 System.out.println("Step 2/3 - Benchmarking models...");
                 bestResult = predictor.trainAndSelectBestModel(arffPath, 0.2, 42);
@@ -61,7 +61,7 @@ public class Main extends Application {
                 predictor.loadModel(modelPath);
 
                 // FIX: Instead of hardcoding, get the stats from the loaded model
-                bestResult = new LinearRegressionModel.ModelEvaluationResult(
+                bestResult = new ApplianceModel.ModelEvaluationResult(
                         predictor.getModelName(),
                         0,
                         predictor.getLastRMSE(),

@@ -45,11 +45,71 @@ public class DataHandler {
     /* ============================
        Convert CSV → ARFF
     ============================ */
-    public static void convertCSVtoARFF(String sourcePath, String destPath) throws Exception {
-        Instances processed = preprocessMergedCSV(sourcePath, 10000, 42);
+    public static void convertCSVtoApplianceARFF(String sourcePath, String destPath) throws Exception {
+        Instances processed = preprocessApplianceCSV(sourcePath, 10000, 42);
         saveInstancesAsARFF(processed, destPath);
     }
+    public static void convertToApplianceARFF(String source, String dest) throws Exception {
+        Instances processed = preprocessApplianceCSV(source, 10000, 42);
+        saveInstancesAsARFF(processed, dest);
+    }
+    public static Instances preprocessApplianceCSV(String sourcePath, int maxRows, int seed) throws Exception {
+        System.out.println("Reading dataset: " + sourcePath);
 
+        CSVLoader loader = new CSVLoader();
+        loader.setSource(new File(sourcePath));
+        Instances data = loader.getDataSet();
+
+        // 1. DOWNSAMPLING (Matches Old Swing logic)
+        if (maxRows > 0 && data.numInstances() > maxRows) {
+            System.out.println("Downsampling to " + maxRows + " rows...");
+            data.randomize(new Random(seed));
+            data = new Instances(data, 0, maxRows);
+        }
+
+        // 2. LEAKAGE REMOVAL
+        // The old swing version kept 22 columns (all except electricitybill)
+        if (data.attribute("electricitybill") != null) {
+            Remove removeBill = new Remove();
+            removeBill.setAttributeIndicesArray(new int[]{data.attribute("electricitybill").index()});
+            removeBill.setInputFormat(data);
+            data = Filter.useFilter(data, removeBill);
+            System.out.println("Removed 'electricitybill' to avoid leakage.");
+        }
+
+        // 3. SET TARGET
+        data.setClassIndex(data.attribute("units").index());
+
+        System.out.println("Preprocessing complete. Rows: " + data.numInstances() + ", Columns: " + data.numAttributes());
+        return data;
+    }
+    public static Instances preprocessForUnitGUI(String sourcePath) throws Exception {
+        // Load the full dataset
+        CSVLoader loader = new CSVLoader();
+        loader.setSource(new File(sourcePath));
+        Instances data = loader.getDataSet();
+
+        // Keep ONLY 'units' and 'electricitybill'
+        String[] features = {"units", "electricitybill"};
+
+        Remove remove = new Remove();
+        remove.setAttributeIndices(getAttributeIndices(data, features));
+        remove.setInvertSelection(true);
+        remove.setInputFormat(data);
+
+        Instances filtered = Filter.useFilter(data, remove);
+        filtered.setClassIndex(filtered.attribute("electricitybill").index());
+        return filtered;
+    }
+    private static String getAttributeIndices(Instances data, String[] names) {
+        StringBuilder sb = new StringBuilder();
+        for (String name : names) {
+            int idx = data.attribute(name).index() + 1;
+            if (sb.length() > 0) sb.append(",");
+            sb.append(idx);
+        }
+        return sb.toString();
+    }
     /* ============================
        Save ARFF File
     ============================ */
