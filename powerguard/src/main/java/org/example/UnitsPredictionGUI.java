@@ -4,8 +4,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -15,46 +17,49 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
+import java.util.function.Consumer;
+
 public class UnitsPredictionGUI {
 
     public UnitsPredictionGUI(Stage stage) {
-        this(stage, () -> new ModeSelectionGUI(stage));
+        this(stage, () -> new ModeSelectionGUI(stage), () -> new LoginApp().showLoginPage(stage));
     }
 
     public UnitsPredictionGUI(Stage stage, Runnable onBack) {
-        String bgColor = "#0F0F12";
-        String cardColor = "#1C1C22";
+        this(stage, onBack, () -> new LoginApp().showLoginPage(stage));
+    }
+
+    public UnitsPredictionGUI(Stage stage, Runnable onBack, Runnable onLogout) {
         String accentBlue = "#0078FF";
         String hoverBlue = "#0056b3";
         String successGreen = "#00E676";
         String errorRed = "#FF5252";
 
+        BorderPane shell = new BorderPane();
+
+        ComboBox<String> themeSelector = new ComboBox<>();
+        themeSelector.getItems().addAll(ThemeManager.DARK_THEME, ThemeManager.BLUE_THEME);
+        themeSelector.getSelectionModel().select(ThemeManager.getCurrentTheme());
+        themeSelector.setOnAction(e -> ThemeManager.setCurrentTheme(themeSelector.getValue()));
+
+        shell.setTop(TopBar.create(onBack, onLogout, themeSelector));
+
         VBox root = new VBox(15);
         root.setPadding(new Insets(20, 40, 40, 40));
         root.setAlignment(Pos.TOP_CENTER);
-        root.setStyle("-fx-background-color: " + bgColor + ";");
-
-        Button btnBack = new Button("Back");
-        btnBack.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;");
-        btnBack.setOnAction(e -> onBack.run());
-
-        HBox navBar = new HBox(btnBack);
-        navBar.setAlignment(Pos.CENTER_LEFT);
 
         Label lblHeader = new Label("UNIT PREDICTION");
         lblHeader.setFont(Font.font("System", FontWeight.BOLD, 26));
-        lblHeader.setTextFill(Color.WHITE);
 
         VBox inputGroup = new VBox(8);
         inputGroup.setAlignment(Pos.CENTER);
 
         Label lblInputHeader = new Label("Enter Units Consumed:");
-        lblInputHeader.setTextFill(Color.web("#BBBBBB"));
         lblInputHeader.setFont(Font.font("System", FontWeight.MEDIUM, 14));
 
         TextField txtUnits = new TextField();
         txtUnits.setPromptText("e.g. 150");
-        txtUnits.setStyle("-fx-background-color: #2D2D35; -fx-text-fill: white; -fx-padding: 12; -fx-background-radius: 8;");
+        txtUnits.setStyle("-fx-padding: 12; -fx-background-radius: 8;");
         txtUnits.setMaxWidth(220);
 
         Label lblError = new Label("Please enter numbers only");
@@ -68,7 +73,7 @@ public class UnitsPredictionGUI {
                 txtUnits.setStyle("-fx-background-color: #2D2D35; -fx-text-fill: " + errorRed + "; -fx-border-color: " + errorRed + "; -fx-border-radius: 8; -fx-background-radius: 8;");
             } else {
                 lblError.setVisible(false);
-                txtUnits.setStyle("-fx-background-color: #2D2D35; -fx-text-fill: white; -fx-background-radius: 8;");
+                applyInputStyle(txtUnits, ThemeManager.getCurrentTheme());
             }
         });
 
@@ -88,7 +93,7 @@ public class UnitsPredictionGUI {
         VBox resCard = new VBox(5);
         resCard.setAlignment(Pos.CENTER);
         resCard.setPadding(new Insets(25));
-        resCard.setStyle("-fx-background-color: " + cardColor + "; -fx-background-radius: 15; -fx-border-color: #333333; -fx-border-radius: 15;");
+        resCard.setStyle("-fx-background-radius: 15; -fx-border-color: #333333; -fx-border-radius: 15;");
         resCard.setMaxWidth(300);
 
         Text symbol = new Text("Rs ");
@@ -103,7 +108,6 @@ public class UnitsPredictionGUI {
         flow.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
         Label lblSub = new Label("ESTIMATED KSEB BILL");
-        lblSub.setTextFill(Color.web("#888888"));
         lblSub.setFont(Font.font("System", 11));
         resCard.getChildren().addAll(flow, lblSub);
 
@@ -123,11 +127,55 @@ public class UnitsPredictionGUI {
             }
         });
 
-        root.getChildren().addAll(navBar, lblHeader, inputGroup, btnPredict, lblStatus, resCard);
+        root.getChildren().addAll(lblHeader, inputGroup, btnPredict, lblStatus, resCard);
+        shell.setCenter(root);
 
-        Scene scene = new Scene(root, 600, 500);
+        Scene scene = new Scene(shell, 600, 500);
+        applyTheme(root, lblHeader, lblInputHeader, lblSub, resCard, txtUnits, ThemeManager.getCurrentTheme());
+        Consumer<String> listener = theme -> {
+            if (themeSelector.getValue() == null || !themeSelector.getValue().equals(theme)) {
+                themeSelector.getSelectionModel().select(theme);
+            }
+            applyTheme(root, lblHeader, lblInputHeader, lblSub, resCard, txtUnits, theme);
+        };
+        ThemeManager.addListener(listener);
+        stage.setOnHidden(e -> ThemeManager.removeListener(listener));
+
         stage.setScene(scene);
         stage.setTitle("PowerGuard | Units Prediction");
         stage.show();
+    }
+
+    private void applyTheme(
+            VBox root,
+            Label header,
+            Label inputHeader,
+            Label sub,
+            VBox resCard,
+            TextField txtUnits,
+            String theme
+    ) {
+        if (ThemeManager.BLUE_THEME.equals(theme)) {
+            root.setStyle("-fx-background-color: linear-gradient(to bottom right, #eff6ff, #dbeafe);");
+            header.setTextFill(Color.web("#1f2937"));
+            inputHeader.setTextFill(Color.web("#374151"));
+            sub.setTextFill(Color.web("#4b5563"));
+            resCard.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 15; -fx-border-color: #bfdbfe; -fx-border-radius: 15;");
+        } else {
+            root.setStyle("-fx-background-color: #0F0F12;");
+            header.setTextFill(Color.WHITE);
+            inputHeader.setTextFill(Color.web("#BBBBBB"));
+            sub.setTextFill(Color.web("#888888"));
+            resCard.setStyle("-fx-background-color: #1C1C22; -fx-background-radius: 15; -fx-border-color: #333333; -fx-border-radius: 15;");
+        }
+        applyInputStyle(txtUnits, theme);
+    }
+
+    private void applyInputStyle(TextField field, String theme) {
+        if (ThemeManager.BLUE_THEME.equals(theme)) {
+            field.setStyle("-fx-background-color: #ffffff; -fx-text-fill: #111827; -fx-padding: 12; -fx-background-radius: 8;");
+        } else {
+            field.setStyle("-fx-background-color: #2D2D35; -fx-text-fill: white; -fx-padding: 12; -fx-background-radius: 8;");
+        }
     }
 }

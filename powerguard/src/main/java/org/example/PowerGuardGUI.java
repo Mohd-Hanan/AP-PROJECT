@@ -28,6 +28,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -49,6 +50,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class PowerGuardGUI extends Application {
 
@@ -95,6 +97,9 @@ public class PowerGuardGUI extends Application {
     private String modelName;
     private double r2;
     private double rmse;
+    private Runnable onBack;
+    private Runnable onLogout;
+    private Consumer<String> themeListener;
 
     public PowerGuardGUI() {
     }
@@ -110,12 +115,28 @@ public class PowerGuardGUI extends Application {
         this.rmse = rmse;
     }
 
+    public PowerGuardGUI(
+            ApplianceModel predictor,
+            String modelName,
+            double r2,
+            double rmse,
+            Runnable onBack,
+            Runnable onLogout
+    ) {
+        this(predictor, modelName, r2, rmse);
+        this.onBack = onBack;
+        this.onLogout = onLogout;
+    }
+
     @Override
     public void start(Stage stage) {
         initializeData();
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(16));
+
+        HBox topBar = TopBar.create(onBack, onLogout, null);
+        root.setTop(topBar);
 
         VBox sidebar = createSidebar();
         VBox dashboard = createDashboard();
@@ -125,16 +146,30 @@ public class PowerGuardGUI extends Application {
         root.setCenter(dashboard);
         root.setRight(inputPanel);
 
-        BorderPane.setMargin(dashboard, new Insets(0, 12, 0, 12));
+        BorderPane.setMargin(sidebar, new Insets(10, 0, 0, 0));
+        BorderPane.setMargin(dashboard, new Insets(10, 12, 0, 12));
+        BorderPane.setMargin(inputPanel, new Insets(10, 0, 0, 0));
 
         mainScene = new Scene(root, 1320, 820);
-        applyTheme("Dark Theme");
+        String selectedTheme = ThemeManager.getCurrentTheme();
+        applyTheme(selectedTheme);
+        if (comboTheme != null) {
+            comboTheme.getSelectionModel().select(selectedTheme);
+        }
 
         stage.setTitle("PowerGuard AI Energy Predictor");
         stage.setMinWidth(1150);
         stage.setMinHeight(760);
         stage.setScene(mainScene);
         stage.show();
+
+        themeListener = this::applyTheme;
+        ThemeManager.addListener(themeListener);
+        stage.setOnHidden(e -> {
+            if (themeListener != null) {
+                ThemeManager.removeListener(themeListener);
+            }
+        });
 
         refreshUsageChartFromTable();
     }
@@ -269,10 +304,10 @@ public class PowerGuardGUI extends Application {
         themeLabel.getStyleClass().add("field-label");
 
         comboTheme = new ComboBox<>();
-        comboTheme.getItems().addAll("Dark Theme", "Blue Analytics Theme");
-        comboTheme.getSelectionModel().select("Dark Theme");
+        comboTheme.getItems().addAll(ThemeManager.DARK_THEME, ThemeManager.BLUE_THEME);
+        comboTheme.getSelectionModel().select(ThemeManager.getCurrentTheme());
         comboTheme.setMaxWidth(Double.MAX_VALUE);
-        comboTheme.setOnAction(e -> applyTheme(comboTheme.getValue()));
+        comboTheme.setOnAction(e -> ThemeManager.setCurrentTheme(comboTheme.getValue()));
 
         Button reset = new Button("RESET ALL");
         Button export = new Button("EXPORT PDF");
@@ -492,7 +527,7 @@ public class PowerGuardGUI extends Application {
         }
 
         String stylesheet;
-        if ("Blue Analytics Theme".equals(selectedTheme)) {
+        if (ThemeManager.BLUE_THEME.equals(selectedTheme)) {
             stylesheet = getClass().getResource("/blue-theme.css").toExternalForm();
         } else {
             stylesheet = getClass().getResource("/dark-theme.css").toExternalForm();
@@ -502,6 +537,9 @@ public class PowerGuardGUI extends Application {
         mainScene.getStylesheets().clear();
         mainScene.getStylesheets().add(base);
         mainScene.getStylesheets().add(stylesheet);
+        if (comboTheme != null && comboTheme.getValue() != null && !comboTheme.getValue().equals(selectedTheme)) {
+            comboTheme.getSelectionModel().select(selectedTheme);
+        }
         refreshUsageChartFromTable();
     }
 

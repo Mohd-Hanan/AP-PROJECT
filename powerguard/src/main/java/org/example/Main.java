@@ -93,13 +93,17 @@ public class Main extends Application {
     private void showModeSelection(Stage stage, LoginApp login) {
         new ModeSelectionGUI(
                 stage,
-                () -> new UnitsPredictionGUI(stage, () -> showModeSelection(stage, login)),
-                () -> showAppliancePrediction(stage),
+                () -> new UnitsPredictionGUI(
+                        stage,
+                        () -> showModeSelection(stage, login),
+                        () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
+                ),
+                () -> showAppliancePrediction(stage, login),
                 () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
         );
     }
 
-    private void showAppliancePrediction(Stage stage) {
+    private void showAppliancePrediction(Stage stage, LoginApp login) {
         ApplianceModel.ModelEvaluationResult safeResult = finalResult == null
                 ? new ApplianceModel.ModelEvaluationResult("Unavailable", 0, 0, 0, 0, 0)
                 : finalResult;
@@ -108,7 +112,9 @@ public class Main extends Application {
                 predictor,
                 safeResult.modelName,
                 safeResult.r2,
-                safeResult.rmse
+                safeResult.rmse,
+                () -> showModeSelection(stage, login),
+                () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
         );
         gui.start(stage);
     }
