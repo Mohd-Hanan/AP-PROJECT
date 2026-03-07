@@ -497,7 +497,7 @@ public class PowerGuardGUI extends Application {
         } else {
             stylesheet = getClass().getResource("/dark-theme.css").toExternalForm();
         }
-        String base = getClass().getResource("/style.css").toExternalForm();
+        String base = getClass().getResource("/style2.css").toExternalForm();
 
         mainScene.getStylesheets().clear();
         mainScene.getStylesheets().add(base);

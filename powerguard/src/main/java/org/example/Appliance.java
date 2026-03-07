@@ -13,10 +13,18 @@ public class Appliance {
 
     // Methods defined in your UML
     public double getpowerRating() {
+        return getPowerRating();
+    }
+
+    public double getPowerRating() {
         return defaultPowerRating;
     }
 
     public void updatepowerRating(double newRating) {
+        updatePowerRating(newRating);
+    }
+
+    public void updatePowerRating(double newRating) {
         this.defaultPowerRating = newRating;
     }
 

@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.net.URISyntaxException;
 
 public class Main extends Application {
 
@@ -20,15 +21,21 @@ public class Main extends Application {
         String arffPath = "target/appliance_dataset.arff";
         String modelPath = "target/appliance_model.model";
 
-        String csvPath = Main.class
-                .getClassLoader()
-                .getResource("data/final_electricity_dataset.csv")
-                .getPath();
+        String csvPath;
+        try {
+            csvPath = new File(
+                    Main.class
+                            .getClassLoader()
+                            .getResource("data/final_electricity_dataset.csv")
+                            .toURI()
+            ).getPath();
+        } catch (URISyntaxException | NullPointerException e) {
+            throw new IllegalStateException("Dataset resource missing: data/final_electricity_dataset.csv", e);
+        }
 
         predictor = new ApplianceModel();
 
         try {
-
             File modelFile = new File(modelPath);
             File sourceFile = new File(csvPath);
 
@@ -43,7 +50,6 @@ public class Main extends Application {
                             sourceFile.lastModified() > modelFile.lastModified();
 
             if (retrainNeeded) {
-
                 System.out.println("Step 1/3 - Preprocessing CSV...");
                 DataHandler.convertCSVtoApplianceARFF(csvPath, arffPath);
 
@@ -55,12 +61,10 @@ public class Main extends Application {
 
                 System.out.println("Best Model Selected: " + bestResult.modelName);
                 System.out.println(bestResult);
-
             } else {
                 System.out.println("Loading existing trained model...");
                 predictor.loadModel(modelPath);
 
-                // FIX: Instead of hardcoding, get the stats from the loaded model
                 bestResult = new ApplianceModel.ModelEvaluationResult(
                         predictor.getModelName(),
                         0,
@@ -72,9 +76,9 @@ public class Main extends Application {
             }
 
             finalResult = bestResult;
-
         } catch (Exception e) {
             e.printStackTrace();
+            finalResult = new ApplianceModel.ModelEvaluationResult("Unavailable", 0, 0, 0, 0, 0);
         }
 
         launch(args);
@@ -82,27 +86,30 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        if (predictor == null) {
-            predictor = new ApplianceModel();
-        }
-        if (finalResult == null) {
-            finalResult = new ApplianceModel.ModelEvaluationResult(
-                    "Unavailable",
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-            );
-        }
+        LoginApp login = new LoginApp();
+        login.showLoginPage(stage, () -> showModeSelection(stage, login));
+    }
+
+    private void showModeSelection(Stage stage, LoginApp login) {
+        new ModeSelectionGUI(
+                stage,
+                () -> new UnitsPredictionGUI(stage, () -> showModeSelection(stage, login)),
+                () -> showAppliancePrediction(stage),
+                () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
+        );
+    }
+
+    private void showAppliancePrediction(Stage stage) {
+        ApplianceModel.ModelEvaluationResult safeResult = finalResult == null
+                ? new ApplianceModel.ModelEvaluationResult("Unavailable", 0, 0, 0, 0, 0)
+                : finalResult;
 
         PowerGuardGUI gui = new PowerGuardGUI(
                 predictor,
-                finalResult.modelName,
-                finalResult.r2,
-                finalResult.rmse
+                safeResult.modelName,
+                safeResult.r2,
+                safeResult.rmse
         );
-
         gui.start(stage);
     }
 }
