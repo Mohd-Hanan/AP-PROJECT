@@ -583,22 +583,21 @@ public class PowerGuardGUI extends Application {
     }
 
     private void refreshUsageChartFromTable() {
-        Map<String, Double> aggregatedUsage = new LinkedHashMap<>();
+        Map<String, Integer> deviceCounter = new LinkedHashMap<>();
+
+        XYChart.Series<String, Number> newSeries = new XYChart.Series<>();
 
         for (PredictionResult row : predictionRows) {
             String device = row.deviceProperty().get();
             double units = parseUnits(row.unitsProperty().get());
-            aggregatedUsage.merge(device, units, Double::sum);
-        }
 
-        XYChart.Series<String, Number> newSeries = new XYChart.Series<>();
+            int count = deviceCounter.getOrDefault(device, 0);
+            deviceCounter.put(device, count + 1);
 
-        for (Map.Entry<String, Double> entry : aggregatedUsage.entrySet()) {
-            String device = entry.getKey();
-            double value = entry.getValue();
+            String label = (count == 0) ? device : device + " (" + count + ")";
 
             XYChart.Data<String, Number> data =
-                    new XYChart.Data<>(device, value);
+                    new XYChart.Data<>(label, units);
 
             newSeries.getData().add(data);
         }
