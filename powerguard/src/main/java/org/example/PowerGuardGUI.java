@@ -61,7 +61,6 @@ public class PowerGuardGUI extends Application {
     private static ApplianceModel predictor;
 
     private final Map<String, Map<String, Integer>> deviceLibrary = new LinkedHashMap<>();
-    private final Map<String, XYChart.Data<String, Number>> chartDataByDevice = new LinkedHashMap<>();
 
     private final ObservableList<PredictionResult> predictionRows = FXCollections.observableArrayList();
     private final ObservableList<String> companyItems = FXCollections.observableArrayList();
@@ -73,7 +72,6 @@ public class PowerGuardGUI extends Application {
 
     private BarChart<String, Number> usageChart;
     private NumberAxis usageYAxis;
-    private XYChart.Series<String, Number> chartSeries;
 
     private ProgressBar budgetBar;
 
@@ -327,14 +325,11 @@ public class PowerGuardGUI extends Application {
         usageChart = new BarChart<>(xAxis, usageYAxis);
         usageChart.setTitle("Monthly Energy Usage by Device");
         usageChart.setLegendVisible(false);
-        usageChart.setAnimated(true);
-        usageChart.setCategoryGap(16);
-        usageChart.setBarGap(6);
+        usageChart.setAnimated(false);
+        usageChart.setCategoryGap(30);
+        usageChart.setBarGap(8);
         usageChart.setMinHeight(320);
         usageChart.setPrefHeight(420);
-
-        chartSeries = new XYChart.Series<>();
-        usageChart.getData().add(chartSeries);
 
         historyTable = new TableView<>();
         historyTable.getStyleClass().add("prediction-table");
@@ -589,31 +584,39 @@ public class PowerGuardGUI extends Application {
 
     private void refreshUsageChartFromTable() {
         Map<String, Double> aggregatedUsage = new LinkedHashMap<>();
+
         for (PredictionResult row : predictionRows) {
             String device = row.deviceProperty().get();
             double units = parseUnits(row.unitsProperty().get());
             aggregatedUsage.merge(device, units, Double::sum);
         }
 
-        chartSeries.getData().clear();
-        chartDataByDevice.clear();
+        XYChart.Series<String, Number> newSeries = new XYChart.Series<>();
 
         for (Map.Entry<String, Double> entry : aggregatedUsage.entrySet()) {
             String device = entry.getKey();
             double value = entry.getValue();
 
-            XYChart.Data<String, Number> point = new XYChart.Data<>(device, value);
-            chartDataByDevice.put(device, point);
-            chartSeries.getData().add(point);
-            attachTooltip(point, String.format("%s\nMonthly kWh: %.2f", device, value));
+            XYChart.Data<String, Number> data =
+                    new XYChart.Data<>(device, value);
+
+            newSeries.getData().add(data);
         }
 
-        if (!usageChart.getData().contains(chartSeries)) {
-            usageChart.getData().clear();
-            usageChart.getData().add(chartSeries);
-        }
-        usageYAxis.setAutoRanging(true);
-        usageChart.requestLayout();
+        usageChart.setData(FXCollections.observableArrayList(newSeries));
+        Platform.runLater(() -> {
+            usageChart.applyCss();
+            usageChart.layout();
+            for (XYChart.Data<String, Number> data : newSeries.getData()) {
+                if (data.getNode() != null) {
+                    data.getNode().setStyle("-fx-bar-fill: #39a2ff;");
+                }
+                attachTooltip(
+                        data,
+                        String.format("%s\nMonthly kWh: %.2f", data.getXValue(), data.getYValue().doubleValue())
+                );
+            }
+        });
     }
 
     private double parseUnits(String unitsText) {
@@ -671,8 +674,6 @@ public class PowerGuardGUI extends Application {
 
     private void resetAll() {
         predictionRows.clear();
-        chartDataByDevice.clear();
-        chartSeries.getData().clear();
 
         comboCompany.getSelectionModel().clearSelection();
         comboCompany.getEditor().clear();

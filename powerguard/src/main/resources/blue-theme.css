@@ -78,6 +78,10 @@
     -fx-background-color: #edf6ff;
     -fx-border-color: #c6def2;
 }
+.chart-bar {
+    -fx-bar-fill: #3498db; /* A visible blue */
+}
+.default-color0.chart-bar { -fx-bar-fill: #3498db; }
 
 .chart-vertical-grid-lines,
 .chart-horizontal-grid-lines {
