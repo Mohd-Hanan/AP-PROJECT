@@ -79,14 +79,12 @@ public class PowerGuardGUI extends Application {
 
     private ComboBox<String> comboCompany;
     private ComboBox<String> comboDevice;
-    private ComboBox<String> comboTheme;
 
     private TextField txtHours;
     private TextField txtQuantity;
     private TextField txtBudget;
 
     private Label lblResult;
-    private Label lblCarbon;
     private Label lblUnits;
     private Label lblModel;
     private Label lblR2;
@@ -135,10 +133,8 @@ public class PowerGuardGUI extends Application {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(16));
 
-        if (onBack != null || onLogout != null) {
-            HBox topBar = TopBar.create(onBack, onLogout, null);
-            root.setTop(topBar);
-        }
+        HBox topBar = TopBar.create(onBack, onLogout);
+        root.setTop(topBar);
 
         VBox sidebar = createSidebar();
         VBox dashboard = createDashboard();
@@ -152,16 +148,14 @@ public class PowerGuardGUI extends Application {
         BorderPane.setMargin(dashboard, new Insets(10, 12, 0, 12));
         BorderPane.setMargin(inputPanel, new Insets(10, 0, 0, 0));
 
-        mainScene = new Scene(root, 1320, 820);
+        mainScene = new Scene(root, 1280, 800);
         String selectedTheme = ThemeManager.getCurrentTheme();
         applyTheme(selectedTheme);
-        if (comboTheme != null) {
-            comboTheme.getSelectionModel().select(selectedTheme);
-        }
 
         stage.setTitle("PowerGuard AI Energy Predictor");
-        stage.setMinWidth(1150);
-        stage.setMinHeight(760);
+        stage.setWidth(1280);
+        stage.setHeight(800);
+        stage.setResizable(false);
         stage.setScene(mainScene);
         stage.show();
 
@@ -302,15 +296,6 @@ public class PowerGuardGUI extends Application {
         Label subtitle = new Label("AI Energy Predictor");
         subtitle.getStyleClass().add("sidebar-subtitle");
 
-        Label themeLabel = new Label("Theme");
-        themeLabel.getStyleClass().add("field-label");
-
-        comboTheme = new ComboBox<>();
-        comboTheme.getItems().addAll(ThemeManager.DARK_THEME, ThemeManager.BLUE_THEME);
-        comboTheme.getSelectionModel().select(ThemeManager.getCurrentTheme());
-        comboTheme.setMaxWidth(Double.MAX_VALUE);
-        comboTheme.setOnAction(e -> ThemeManager.setCurrentTheme(comboTheme.getValue()));
-
         Button reset = new Button("RESET ALL");
         Button export = new Button("EXPORT PDF");
         reset.getStyleClass().addAll("primary-button", "button-wide");
@@ -322,7 +307,7 @@ public class PowerGuardGUI extends Application {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        VBox box = new VBox(12, title, subtitle, new Separator(), themeLabel, comboTheme, reset, export, spacer);
+        VBox box = new VBox(12, title, subtitle, new Separator(), reset, export, spacer);
         box.getStyleClass().add("sidebar");
         box.setPadding(new Insets(20));
         box.setPrefWidth(235);
@@ -372,13 +357,10 @@ public class PowerGuardGUI extends Application {
         TableColumn<PredictionResult, String> costCol = new TableColumn<>("Predicted Bill");
         costCol.setCellValueFactory(data -> data.getValue().costProperty());
 
-        TableColumn<PredictionResult, String> carbonCol = new TableColumn<>("CO2");
-        carbonCol.setCellValueFactory(data -> data.getValue().carbonProperty());
-
         TableColumn<PredictionResult, String> statusCol = new TableColumn<>("Status");
         statusCol.setCellValueFactory(data -> data.getValue().statusProperty());
 
-        historyTable.getColumns().addAll(deviceCol, qtyCol, hoursCol, unitsCol, costCol, carbonCol, statusCol);
+        historyTable.getColumns().addAll(deviceCol, qtyCol, hoursCol, unitsCol, costCol, statusCol);
 
         predictionRows.addListener((ListChangeListener<PredictionResult>) change -> refreshUsageChartFromTable());
 
@@ -448,8 +430,6 @@ public class PowerGuardGUI extends Application {
 
         lblUnits = new Label("Monthly Usage: 0.00 kWh");
         lblUnits.getStyleClass().add("result-meta");
-        lblCarbon = new Label("CO2: 0.00 kg");
-        lblCarbon.getStyleClass().add("result-meta");
 
         Label inputHeader = new Label("Input Parameters");
         inputHeader.getStyleClass().add("section-title");
@@ -466,8 +446,7 @@ public class PowerGuardGUI extends Application {
                 predict,
                 new Separator(),
                 lblResult,
-                lblUnits,
-                lblCarbon
+                lblUnits
         );
 
         panel.getStyleClass().add("panel");
@@ -547,9 +526,6 @@ public class PowerGuardGUI extends Application {
         mainScene.getStylesheets().clear();
         mainScene.getStylesheets().add(base);
         mainScene.getStylesheets().add(stylesheet);
-        if (comboTheme != null && comboTheme.getValue() != null && !comboTheme.getValue().equals(selectedTheme)) {
-            comboTheme.getSelectionModel().select(selectedTheme);
-        }
         refreshUsageChartFromTable();
     }
 
@@ -606,7 +582,6 @@ public class PowerGuardGUI extends Application {
 
         lblResult.setText(String.format("Rs %.2f", cost));
         lblUnits.setText(String.format("Monthly Usage: %.2f kWh (base %.2f)", metrics.adjustedUnits(), metrics.physicalUnits()));
-        lblCarbon.setText(String.format("CO2: %.2f kg", metrics.co2Kg()));
 
         budgetBar.setProgress(Math.min(progress, 1.0));
         budgetBar.getStyleClass().removeAll("budget-safe", "budget-over");
@@ -690,7 +665,6 @@ public class PowerGuardGUI extends Application {
                 String.format("%.2f", hours),
                 String.format("%.2f", metrics.adjustedUnits()),
                 String.format("Rs %.2f", metrics.billAmount()),
-                String.format("%.2f kg", metrics.co2Kg()),
                 status
         ));
         historyTable.refresh();
@@ -713,7 +687,6 @@ public class PowerGuardGUI extends Application {
 
         lblResult.setText("Rs 0.00");
         lblUnits.setText("Monthly Usage: 0.00 kWh");
-        lblCarbon.setText("CO2: 0.00 kg");
 
         budgetBar.setProgress(0);
         budgetBar.getStyleClass().removeAll("budget-safe", "budget-over");

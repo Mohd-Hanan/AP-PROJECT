@@ -19,6 +19,14 @@ public final class ThemeManager {
         return currentTheme;
     }
 
+    public static boolean isDarkTheme() {
+        return DARK_THEME.equals(currentTheme);
+    }
+
+    public static void toggleTheme() {
+        setCurrentTheme(isDarkTheme() ? BLUE_THEME : DARK_THEME);
+    }
+
     public static void setCurrentTheme(String theme) {
         if (theme == null || theme.isBlank()) {
             return;

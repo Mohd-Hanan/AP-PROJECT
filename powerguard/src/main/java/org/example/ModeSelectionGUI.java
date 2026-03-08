@@ -3,7 +3,6 @@ package org.example;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -37,22 +36,18 @@ public class ModeSelectionGUI {
         this.onLogout = onLogout;
 
         BorderPane root = new BorderPane();
-
-        ComboBox<String> themeSelector = new ComboBox<>();
-        themeSelector.getItems().addAll(ThemeManager.DARK_THEME, ThemeManager.BLUE_THEME);
-        themeSelector.getSelectionModel().select(ThemeManager.getCurrentTheme());
-        themeSelector.setOnAction(e -> ThemeManager.setCurrentTheme(themeSelector.getValue()));
-
-        root.setTop(TopBar.create(null, this.onLogout, themeSelector));
+        root.getStyleClass().add("mode-root");
+        root.setTop(TopBar.create(null, this.onLogout));
 
         VBox center = new VBox(25);
         center.setAlignment(Pos.CENTER);
+        center.getStyleClass().add("mode-center");
 
         Label title = new Label("POWERGUARD");
-        title.setStyle("-fx-font-size:40px; -fx-font-weight:bold;");
+        title.getStyleClass().add("mode-title");
 
         Label subtitle = new Label("Mode Selection");
-        subtitle.setStyle("-fx-font-size:20px;");
+        subtitle.getStyleClass().add("mode-subtitle");
 
         Button unitBtn = buildModeButton("Predict via Electricity Units");
         Button appBtn = buildModeButton("Predict via Appliance Load");
@@ -63,19 +58,17 @@ public class ModeSelectionGUI {
         center.getChildren().addAll(title, subtitle, unitBtn, appBtn);
         root.setCenter(center);
 
-        Scene scene = new Scene(root, 600, 500);
-        applyTheme(root, title, subtitle, ThemeManager.getCurrentTheme());
+        Scene scene = new Scene(root, 1280, 800);
+        applyTheme(scene, ThemeManager.getCurrentTheme());
 
-        Consumer<String> listener = theme -> {
-            if (themeSelector.getValue() == null || !themeSelector.getValue().equals(theme)) {
-                themeSelector.getSelectionModel().select(theme);
-            }
-            applyTheme(root, title, subtitle, theme);
-        };
+        Consumer<String> listener = theme -> applyTheme(scene, theme);
         ThemeManager.addListener(listener);
         stage.setOnHidden(e -> ThemeManager.removeListener(listener));
 
         stage.setTitle("PowerGuard");
+        stage.setWidth(1280);
+        stage.setHeight(800);
+        stage.setResizable(false);
         stage.setScene(scene);
         stage.show();
     }
@@ -84,24 +77,16 @@ public class ModeSelectionGUI {
         Button button = new Button(text);
         button.setPrefWidth(300);
         button.setPrefHeight(50);
-        button.setStyle(
-                "-fx-background-color:#3498db;" +
-                        "-fx-text-fill:white;" +
-                        "-fx-font-size:16px;" +
-                        "-fx-background-radius:8;"
-        );
+        button.getStyleClass().add("mode-button");
         return button;
     }
 
-    private void applyTheme(BorderPane root, Label title, Label subtitle, String theme) {
-        if (ThemeManager.BLUE_THEME.equals(theme)) {
-            root.setStyle("-fx-background-color: linear-gradient(to bottom right, #eaf4ff, #dbeafe);");
-            title.setStyle("-fx-font-size:40px; -fx-font-weight:bold; -fx-text-fill:#1f2937;");
-            subtitle.setStyle("-fx-font-size:20px; -fx-text-fill:#374151;");
-        } else {
-            root.setStyle("-fx-background-color:#1e1e1e;");
-            title.setStyle("-fx-font-size:40px; -fx-font-weight:bold; -fx-text-fill:white;");
-            subtitle.setStyle("-fx-font-size:20px; -fx-text-fill:#d1d5db;");
-        }
+    private void applyTheme(Scene scene, String theme) {
+        String base = getClass().getResource("/style.css").toExternalForm();
+        String themed = ThemeManager.BLUE_THEME.equals(theme)
+                ? getClass().getResource("/blue-theme.css").toExternalForm()
+                : getClass().getResource("/dark-theme.css").toExternalForm();
+
+        scene.getStylesheets().setAll(base, themed);
     }
 }

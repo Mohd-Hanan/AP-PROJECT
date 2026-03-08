@@ -9,7 +9,7 @@ public class UnitPredictionModel {
     private boolean isLoaded = false;
 
     /**
-     * Predicts a target (like Cost or Carbon) based strictly on units consumed.
+     * Predicts a target value (for example, bill amount) from consumed units.
      */
     public double predictFromUnits(double unitsInput) throws Exception {
         if (!isLoaded || model == null) {

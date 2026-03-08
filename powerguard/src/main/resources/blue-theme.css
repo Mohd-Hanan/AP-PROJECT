@@ -126,3 +126,69 @@
 .progress-bar {
     -fx-accent: #1f8f5c;
 }
+
+.top-button.back-button {
+    -fx-background-color: #7b9ab8;
+    -fx-text-fill: #ffffff;
+}
+
+.top-button.logout-button {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: #ffffff;
+}
+
+.theme-toggle-button {
+    -fx-background-color: #d7ecff;
+    -fx-border-color: #8fb4d3;
+    -fx-border-radius: 999;
+    -fx-text-fill: #114569;
+}
+
+.mode-root,
+.units-root {
+    -fx-background-color: linear-gradient(to bottom right, #eaf4ff, #dbeafe);
+}
+
+.mode-title,
+.units-header {
+    -fx-text-fill: #1f2937;
+}
+
+.mode-subtitle,
+.units-input-header,
+.units-sub {
+    -fx-text-fill: #374151;
+}
+
+.mode-button {
+    -fx-background-color: #0e7ac7;
+    -fx-text-fill: #ffffff;
+}
+
+.mode-button:hover {
+    -fx-background-color: #1689da;
+}
+
+.units-input {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #9fc5e6;
+    -fx-text-fill: #111827;
+    -fx-prompt-text-fill: #6b7280;
+}
+
+.units-error {
+    -fx-text-fill: #ff5252;
+}
+
+.units-status {
+    -fx-text-fill: #153451;
+}
+
+.units-result-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #bfdbfe;
+}
+
+.units-amount {
+    -fx-text-fill: #00e676;
+}

@@ -10,11 +10,10 @@ public class PredictionResult {
     private final StringProperty hours;
     private final StringProperty units;
     private final StringProperty cost;
-    private final StringProperty carbon;
     private final StringProperty status;
 
-    public PredictionResult(String device, String cost, String carbon, String status) {
-        this(device, "-", "-", "-", cost, carbon, status);
+    public PredictionResult(String device, String cost, String status) {
+        this(device, "-", "-", "-", cost, status);
     }
 
     public PredictionResult(
@@ -23,7 +22,6 @@ public class PredictionResult {
             String hours,
             String units,
             String cost,
-            String carbon,
             String status
     ) {
         this.device = new SimpleStringProperty(device);
@@ -31,7 +29,6 @@ public class PredictionResult {
         this.hours = new SimpleStringProperty(hours);
         this.units = new SimpleStringProperty(units);
         this.cost = new SimpleStringProperty(cost);
-        this.carbon = new SimpleStringProperty(carbon);
         this.status = new SimpleStringProperty(status);
     }
 
@@ -53,10 +50,6 @@ public class PredictionResult {
 
     public StringProperty unitsProperty() {
         return units;
-    }
-
-    public StringProperty carbonProperty() {
-        return carbon;
     }
 
     public StringProperty statusProperty() {
