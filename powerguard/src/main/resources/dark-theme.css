@@ -19,6 +19,12 @@
     -fx-text-fill: #b8c8dc;
 }
 
+.meta-label,
+.section-title,
+.result-meta {
+    -fx-text-fill: #e6edf3;
+}
+
 .panel {
     -fx-background-color: #141c27;
     -fx-border-color: #2f3c4d;

@@ -135,8 +135,10 @@ public class PowerGuardGUI extends Application {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(16));
 
-        HBox topBar = TopBar.create(onBack, onLogout, null);
-        root.setTop(topBar);
+        if (onBack != null || onLogout != null) {
+            HBox topBar = TopBar.create(onBack, onLogout, null);
+            root.setTop(topBar);
+        }
 
         VBox sidebar = createSidebar();
         VBox dashboard = createDashboard();
@@ -394,8 +396,11 @@ public class PowerGuardGUI extends Application {
         String shownModel = (this.modelName == null || this.modelName.isBlank()) ? "N/A" : this.modelName;
 
         lblModel = new Label("Model: " + shownModel);
+        lblModel.getStyleClass().add("meta-label");
         lblR2 = new Label(String.format("R2: %.4f", this.r2));
+        lblR2.getStyleClass().add("meta-label");
         lblRMSE = new Label(String.format("RMSE: %.4f", this.rmse));
+        lblRMSE.getStyleClass().add("meta-label");
 
         comboCompany = new ComboBox<>();
         comboCompany.setPrefWidth(Double.MAX_VALUE);
@@ -442,7 +447,12 @@ public class PowerGuardGUI extends Application {
         lblResult.getStyleClass().add("result-value");
 
         lblUnits = new Label("Monthly Usage: 0.00 kWh");
+        lblUnits.getStyleClass().add("result-meta");
         lblCarbon = new Label("CO2: 0.00 kg");
+        lblCarbon.getStyleClass().add("result-meta");
+
+        Label inputHeader = new Label("Input Parameters");
+        inputHeader.getStyleClass().add("section-title");
 
         VBox panel = new VBox(
                 10,
@@ -450,7 +460,7 @@ public class PowerGuardGUI extends Application {
                 lblR2,
                 lblRMSE,
                 new Separator(),
-                new Label("Input Parameters"),
+                inputHeader,
                 inputGrid,
                 budgetBar,
                 predict,
@@ -532,7 +542,7 @@ public class PowerGuardGUI extends Application {
         } else {
             stylesheet = getClass().getResource("/dark-theme.css").toExternalForm();
         }
-        String base = getClass().getResource("/style2.css").toExternalForm();
+        String base = getClass().getResource("/style.css").toExternalForm();
 
         mainScene.getStylesheets().clear();
         mainScene.getStylesheets().add(base);
