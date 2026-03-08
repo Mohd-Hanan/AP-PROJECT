@@ -153,9 +153,8 @@ public class PowerGuardGUI extends Application {
         applyTheme(selectedTheme);
 
         stage.setTitle("PowerGuard AI Energy Predictor");
-        stage.setWidth(1280);
-        stage.setHeight(800);
-        stage.setResizable(false);
+        stage.setResizable(true);
+        stage.setMaximized(true);
         stage.setScene(mainScene);
         stage.show();
 

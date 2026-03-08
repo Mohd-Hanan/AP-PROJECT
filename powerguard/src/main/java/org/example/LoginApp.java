@@ -27,6 +27,9 @@ import java.util.regex.Pattern;
 
 public class LoginApp
 {
+    private static final double LOGIN_WIDTH = 1000;
+    private static final double LOGIN_HEIGHT = 600;
+
     private static final Pattern USER_PATTERN = Pattern.compile("^[a-zA-Z0-9]{5,}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^[a-zA-Z0-9#_]{8,}$");
     private static final String HASH_PREFIX = "sha256:";
@@ -53,7 +56,8 @@ public class LoginApp
         VBox leftSide = new VBox(20);
         leftSide.setAlignment(Pos.CENTER);
         leftSide.setPadding(new Insets(50));
-        leftSide.setPrefWidth(450);
+        leftSide.setPrefWidth(LOGIN_WIDTH / 2.0);
+        leftSide.setMaxWidth(Double.MAX_VALUE);
         leftSide.setStyle("-fx-background-color: white;");
 
         Text loginTitle = new Text("Login to Your Account");
@@ -80,7 +84,8 @@ public class LoginApp
         VBox rightSide = new VBox(20);
         rightSide.setAlignment(Pos.CENTER);
         rightSide.setPadding(new Insets(50));
-        rightSide.setPrefWidth(350);
+        rightSide.setPrefWidth(LOGIN_WIDTH / 2.0);
+        rightSide.setMaxWidth(Double.MAX_VALUE);
         rightSide.setStyle("-fx-background-color: linear-gradient(to bottom right, #2ebf91, #8360c3);");
 
         Text welcomeTitle = new Text("New Here?");
@@ -98,7 +103,15 @@ public class LoginApp
         rightSide.getChildren().addAll(welcomeTitle, desc, signUpBtn);
 
         HBox mainRoot = new HBox(leftSide, rightSide);
-        stage.setScene(new Scene(mainRoot, 800, 500));
+        mainRoot.setFillHeight(true);
+        HBox.setHgrow(leftSide, Priority.ALWAYS);
+        HBox.setHgrow(rightSide, Priority.ALWAYS);
+
+        stage.setResizable(true);
+        stage.setMaximized(false);
+        stage.setWidth(LOGIN_WIDTH);
+        stage.setHeight(LOGIN_HEIGHT);
+        stage.setScene(new Scene(mainRoot, LOGIN_WIDTH, LOGIN_HEIGHT));
         stage.setTitle("EnergyPredict - Login");
         stage.show();
 
@@ -113,7 +126,8 @@ public class LoginApp
         VBox leftSide = new VBox(20);
         leftSide.setAlignment(Pos.CENTER);
         leftSide.setPadding(new Insets(50));
-        leftSide.setPrefWidth(350);
+        leftSide.setPrefWidth(LOGIN_WIDTH / 2.0);
+        leftSide.setMaxWidth(Double.MAX_VALUE);
         leftSide.setStyle("-fx-background-color: linear-gradient(to bottom left, #8360c3, #2ebf91);");
 
         Text backTitle = new Text("One of us?");
@@ -134,7 +148,8 @@ public class LoginApp
         VBox rightSide = new VBox(20);
         rightSide.setAlignment(Pos.CENTER);
         rightSide.setPadding(new Insets(50));
-        rightSide.setPrefWidth(450);
+        rightSide.setPrefWidth(LOGIN_WIDTH / 2.0);
+        rightSide.setMaxWidth(Double.MAX_VALUE);
         rightSide.setStyle("-fx-background-color: white;");
 
         Text regTitle = new Text("Create Account");
@@ -159,7 +174,15 @@ public class LoginApp
 
         // --- MAIN LAYOUT (800x500 to match Login) ---
         HBox mainRoot = new HBox(leftSide, rightSide);
-        stage.setScene(new Scene(mainRoot, 800, 500));
+        mainRoot.setFillHeight(true);
+        HBox.setHgrow(leftSide, Priority.ALWAYS);
+        HBox.setHgrow(rightSide, Priority.ALWAYS);
+
+        stage.setResizable(true);
+        stage.setMaximized(false);
+        stage.setWidth(LOGIN_WIDTH);
+        stage.setHeight(LOGIN_HEIGHT);
+        stage.setScene(new Scene(mainRoot, LOGIN_WIDTH, LOGIN_HEIGHT));
 
         // Actions
         backToLoginBtn.setOnAction(e -> showLoginPage(stage));

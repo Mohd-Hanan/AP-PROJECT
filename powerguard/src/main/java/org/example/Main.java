@@ -7,6 +7,9 @@ import java.io.File;
 import java.net.URISyntaxException;
 
 public class Main extends Application {
+    private static final double LOGIN_WIDTH = 1000;
+    private static final double LOGIN_HEIGHT = 600;
+
 
     private static ApplianceModel predictor;
     private static ApplianceModel.ModelEvaluationResult finalResult;
@@ -87,6 +90,14 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         LoginApp login = new LoginApp();
+        showLogin(stage, login);
+    }
+
+    private void showLogin(Stage stage, LoginApp login) {
+        stage.setResizable(true);
+        stage.setMaximized(false);
+        stage.setWidth(LOGIN_WIDTH);
+        stage.setHeight(LOGIN_HEIGHT);
         login.showLoginPage(stage, () -> showModeSelection(stage, login));
     }
 
@@ -96,10 +107,10 @@ public class Main extends Application {
                 () -> new UnitsPredictionGUI(
                         stage,
                         () -> showModeSelection(stage, login),
-                        () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
+                        () -> showLogin(stage, login)
                 ),
                 () -> showAppliancePrediction(stage, login),
-                () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
+                () -> showLogin(stage, login)
         );
     }
 
@@ -114,8 +125,10 @@ public class Main extends Application {
                 safeResult.r2,
                 safeResult.rmse,
                 () -> showModeSelection(stage, login),
-                () -> login.showLoginPage(stage, () -> showModeSelection(stage, login))
+                () -> showLogin(stage, login)
         );
+        stage.setResizable(true);
+        stage.setMaximized(true);
         gui.start(stage);
     }
 }
