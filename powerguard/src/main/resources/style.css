@@ -228,3 +228,32 @@
     -fx-font-size: 11px;
     -fx-font-weight: 500;
 }
+
+.label {
+    -fx-font-weight: bold;
+}
+
+.button {
+    -fx-font-weight: bold;
+}
+
+.text-field {
+    -fx-font-weight: bold;
+}
+
+.combo-box {
+    -fx-font-weight: bold;
+}
+
+.table-view {
+    -fx-font-weight: bold;
+}
+
+.chart-title {
+    -fx-font-weight: bold;
+}
+
+.model-metric {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}

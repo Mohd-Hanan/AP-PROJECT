@@ -61,6 +61,7 @@ public class PowerGuardGUI extends Application {
     private static ApplianceModel predictor;
 
     private final Map<String, Map<String, Integer>> deviceLibrary = new LinkedHashMap<>();
+    private final Map<String, Integer> deviceInstanceCounter = new LinkedHashMap<>();
 
     private final ObservableList<PredictionResult> predictionRows = FXCollections.observableArrayList();
     private final ObservableList<String> companyItems = FXCollections.observableArrayList();
@@ -288,7 +289,13 @@ public class PowerGuardGUI extends Application {
 
     private VBox createSidebar() {
         Label title = new Label("POWERGUARD");
+        title.setMinWidth(Region.USE_PREF_SIZE);
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.setWrapText(false);
+        title.setEllipsisString("");
         title.getStyleClass().add("sidebar-title");
+        title.setWrapText(false);
+        title.setMaxWidth(Double.MAX_VALUE);
 
         Label subtitle = new Label("AI Energy Predictor");
         subtitle.getStyleClass().add("sidebar-subtitle");
@@ -305,10 +312,11 @@ public class PowerGuardGUI extends Application {
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
         VBox box = new VBox(12, title, subtitle, new Separator(), reset, export, spacer);
+        title.setMaxWidth(Double.MAX_VALUE);
         box.getStyleClass().add("sidebar");
         box.setPadding(new Insets(20));
-        box.setPrefWidth(235);
-        box.setMinWidth(220);
+        box.setPrefWidth(280);
+        box.setMinWidth(260);
         VBox.setVgrow(box, Priority.ALWAYS);
         return box;
     }
@@ -372,11 +380,11 @@ public class PowerGuardGUI extends Application {
         String shownModel = (this.modelName == null || this.modelName.isBlank()) ? "N/A" : this.modelName;
 
         lblModel = new Label("Model: " + shownModel);
-        lblModel.getStyleClass().add("meta-label");
+        lblModel.getStyleClass().addAll("meta-label", "model-metric");
         lblR2 = new Label(String.format("R2: %.4f", this.r2));
-        lblR2.getStyleClass().add("meta-label");
+        lblR2.getStyleClass().addAll("meta-label", "model-metric");
         lblRMSE = new Label(String.format("RMSE: %.4f", this.rmse));
-        lblRMSE.getStyleClass().add("meta-label");
+        lblRMSE.getStyleClass().addAll("meta-label", "model-metric");
 
         comboCompany = new ComboBox<>();
         comboCompany.setPrefWidth(Double.MAX_VALUE);
@@ -583,21 +591,14 @@ public class PowerGuardGUI extends Application {
     }
 
     private void refreshUsageChartFromTable() {
-        Map<String, Integer> deviceCounter = new LinkedHashMap<>();
-
         XYChart.Series<String, Number> newSeries = new XYChart.Series<>();
 
         for (PredictionResult row : predictionRows) {
-            String device = row.deviceProperty().get();
+            String deviceLabel = row.deviceProperty().get();
             double units = parseUnits(row.unitsProperty().get());
 
-            int count = deviceCounter.getOrDefault(device, 0);
-            deviceCounter.put(device, count + 1);
-
-            String label = (count == 0) ? device : device + " (" + count + ")";
-
             XYChart.Data<String, Number> data =
-                    new XYChart.Data<>(label, units);
+                    new XYChart.Data<>(deviceLabel, units);
 
             newSeries.getData().add(data);
         }
@@ -659,9 +660,13 @@ public class PowerGuardGUI extends Application {
             double budgetLimit,
             EnergyUsageService.PredictionMetrics metrics
     ) {
+        int count = deviceInstanceCounter.getOrDefault(device, 0);
+        deviceInstanceCounter.put(device, count + 1);
+        String uniqueDeviceName = (count == 0) ? device : device + " (" + count + ")";
+
         String status = metrics.billAmount() > budgetLimit ? "OVER BUDGET" : "WITHIN BUDGET";
         predictionRows.add(new PredictionResult(
-                device,
+                uniqueDeviceName,
                 String.valueOf(quantity),
                 String.format("%.2f", hours),
                 String.format("%.2f", metrics.adjustedUnits()),
@@ -673,6 +678,7 @@ public class PowerGuardGUI extends Application {
 
     private void resetAll() {
         predictionRows.clear();
+        deviceInstanceCounter.clear();
 
         comboCompany.getSelectionModel().clearSelection();
         comboCompany.getEditor().clear();
