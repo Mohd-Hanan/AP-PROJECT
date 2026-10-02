@@ -53,10 +53,6 @@ PowerGuard is not a clone-and-run project. You need to set up:
 git clone https://github.com/Mohd-Hanan/AP-PROJECT.git
 ```
 
-## Sample output
-
-<p align="center"><img src="usage_report_20260306_225841.png" width="600" alt="Sample usage report exported from PowerGuard"/></p>
-
 ## Team
 
 Built as a four-person team project.
